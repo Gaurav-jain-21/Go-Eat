@@ -3,6 +3,9 @@ const sendEmail    = require('../utils/sendEmail');
 const sendSMS      = require('../utils/sendSMS');
 const { emitToUser } = require('../utils/socketManager');
 
+// ─────────────────────────────────────────────────────
+// Core function — called internally to send all channels
+// ─────────────────────────────────────────────────────
 const sendNotification = async ({
   userId,
   userEmail,
@@ -19,6 +22,7 @@ const sendNotification = async ({
 }) => {
   const channels = { email: false, sms: false, inApp: false };
 
+  // ── 1. Save to DB (always) ──
   const notification = await Notification.create({
     user:    userId,
     title,
@@ -27,6 +31,8 @@ const sendNotification = async ({
     orderId,
     channels,
   });
+
+  // ── 2. In-App via Socket.io ──
   if (useInApp) {
     emitToUser(userId, 'notification', {
       id:      notification._id,
@@ -39,6 +45,7 @@ const sendNotification = async ({
     channels.inApp = true;
   }
 
+  // ── 3. Email ──
   if (useEmail && userEmail) {
     const sent = await sendEmail({
       to:      userEmail,
@@ -49,6 +56,7 @@ const sendNotification = async ({
     channels.email = sent;
   }
 
+  // ── 4. SMS ──
   if (useSMS && userPhone) {
     const sent = await sendSMS({
       to:      userPhone,
@@ -57,12 +65,17 @@ const sendNotification = async ({
     channels.sms = sent;
   }
 
+  // update channels used
   notification.channels = channels;
   await notification.save();
 
   return notification;
 };
 
+// ─────────────────────────────────────────────────────
+// POST /api/notifications/order-placed
+// Called by Order Service after order is placed
+// ─────────────────────────────────────────────────────
 exports.notifyOrderPlaced = async (req, res) => {
   try {
     const { userId, userEmail, userPhone, orderId, totalAmount, hotelName } = req.body;
@@ -96,9 +109,15 @@ exports.notifyOrderPlaced = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────
+// POST /api/notifications/status-update
+// Called by Hotel when they update order status
+// ─────────────────────────────────────────────────────
 exports.notifyStatusUpdate = async (req, res) => {
   try {
     const { userId, userEmail, userPhone, orderId, status } = req.body;
+
+    // status-specific messages
     const statusMessages = {
       'Confirmed':        { msg: 'Your order has been confirmed by the restaurant! 👨‍🍳', sms: true,  email: false },
       'Preparing':        { msg: 'Your food is being prepared fresh! 🔥',                 sms: true,  email: false },
@@ -130,6 +149,9 @@ exports.notifyStatusUpdate = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────
+// POST /api/notifications/order-cancelled
+// ─────────────────────────────────────────────────────
 exports.notifyOrderCancelled = async (req, res) => {
   try {
     const { userId, userEmail, userPhone, orderId, totalAmount } = req.body;
@@ -160,6 +182,10 @@ exports.notifyOrderCancelled = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────
+// POST /api/notifications/refund-completed
+// Called by webhook when refund finishes
+// ─────────────────────────────────────────────────────
 exports.notifyRefundCompleted = async (req, res) => {
   try {
     const { userId, userEmail, userPhone, orderId, refundAmount } = req.body;
@@ -189,7 +215,9 @@ exports.notifyRefundCompleted = async (req, res) => {
   }
 };
 
-
+// ─────────────────────────────────────────────────────
+// GET /api/notifications/my  — user's notification inbox
+// ─────────────────────────────────────────────────────
 exports.getMyNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user.id })
@@ -202,6 +230,9 @@ exports.getMyNotifications = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────
+// PUT /api/notifications/:id/read  — mark as read
+// ─────────────────────────────────────────────────────
 exports.markAsRead = async (req, res) => {
   try {
     await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
@@ -211,6 +242,7 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
+// PUT /api/notifications/mark-all-read
 exports.markAllRead = async (req, res) => {
   try {
     await Notification.updateMany(
@@ -223,6 +255,7 @@ exports.markAllRead = async (req, res) => {
   }
 };
 
+// GET /api/notifications/unread-count
 exports.getUnreadCount = async (req, res) => {
   try {
     const count = await Notification.countDocuments({
