@@ -114,3 +114,6 @@ services/*/uploads/
 bower_components/
 jspm_packages/
 typings/
+.venv
+venv/
+__pycache__/    
