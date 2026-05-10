@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const PUBLIC_ROUTES = [
+  { path: '/health',                   method: 'GET'  },
   { path: '/api/auth/register',        method: 'POST' },
   { path: '/api/auth/login',           method: 'POST' },
   { path: '/api/auth/verify-email',    method: 'GET'  },
