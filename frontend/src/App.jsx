@@ -42,6 +42,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminDelivery from "./pages/admin/AdminDelivery";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminReviews from "./pages/admin/AdminReviews";
 import AdminLogs from "./pages/admin/AdminLogs";
 
 export default function App() {
@@ -91,6 +92,7 @@ export default function App() {
       <Route path="/admin/delivery" element={<AdminDelivery />} />
       <Route path="/admin/payments" element={<AdminPayments />} />
       <Route path="/admin/notifications" element={<AdminNotifications />} />
+      <Route path="/admin/reviews" element={<AdminReviews />} />
       <Route path="/admin/logs" element={<AdminLogs />} />
     </Routes>
     <FloatingAI />

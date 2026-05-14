@@ -50,6 +50,7 @@ const roleLinks = {
     { to: "/admin/orders", label: "Orders", icon: ClipboardList },
     { to: "/admin/delivery", label: "Delivery", icon: Truck },
     { to: "/admin/payments", label: "Payments", icon: CreditCard },
+    { to: "/admin/reviews", label: "Reviews", icon: Star },
     { to: "/admin/notifications", label: "Notifications", icon: Bell },
   ],
 };

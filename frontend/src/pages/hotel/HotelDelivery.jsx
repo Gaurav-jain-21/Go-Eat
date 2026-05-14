@@ -18,6 +18,7 @@ export default function HotelDelivery() {
   const [hotels, setHotels] = useState([]);
   const [hotelId, setHotelId] = useState("");
   const [trackings, setTrackings] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [assign, setAssign] = useState(blankAssign);
 
   useEffect(() => {
@@ -27,6 +28,12 @@ export default function HotelDelivery() {
       if (mine[0]?._id) setHotelId(mine[0]._id);
     }).catch(() => {});
   }, [ownerId]);
+
+  useEffect(() => {
+    api.get("/api/auth/delivery-partners")
+      .then(({ data }) => setPartners(data.partners || []))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     if (!hotelId) return;
@@ -65,6 +72,15 @@ export default function HotelDelivery() {
     });
   };
 
+  const pickPartner = (partner) => {
+    setAssign({
+      ...assign,
+      deliveryPartnerId: partner._id,
+      deliveryPartnerName: partner.name,
+      deliveryPartnerPhone: partner.phone || "",
+    });
+  };
+
   return (
     <main className="page">
       <div className="pageHead">
@@ -84,12 +100,38 @@ export default function HotelDelivery() {
         <h2>Assign delivery partner</h2>
         <div className="grid2">
           <input placeholder="Order id" value={assign.orderId} onChange={(event) => setAssign({ ...assign, orderId: event.target.value })} required />
-          <input placeholder="Partner id" value={assign.deliveryPartnerId} onChange={(event) => setAssign({ ...assign, deliveryPartnerId: event.target.value })} required />
+          <select value={assign.deliveryPartnerId} onChange={(event) => {
+            const partner = partners.find((item) => item._id === event.target.value);
+            if (partner) pickPartner(partner);
+            else setAssign({ ...assign, deliveryPartnerId: "" });
+          }} required>
+            <option value="">Select delivery partner</option>
+            {partners.map((partner) => <option key={partner._id} value={partner._id}>{partner.name} - {partner.email}</option>)}
+          </select>
           <input placeholder="Partner name" value={assign.deliveryPartnerName} onChange={(event) => setAssign({ ...assign, deliveryPartnerName: event.target.value })} />
           <input placeholder="Partner phone" value={assign.deliveryPartnerPhone} onChange={(event) => setAssign({ ...assign, deliveryPartnerPhone: event.target.value })} />
         </div>
         <button className="btn full">Assign partner</button>
       </form>
+
+      {partners.length ? (
+        <section className="cards mt">
+          {partners.map((partner) => (
+            <article className="panel" key={partner._id}>
+              <div className="between wrap">
+                <h2>{partner.name}</h2>
+                <span className="pill green">DELIVERY</span>
+              </div>
+              <p className="muted">{partner.email}</p>
+              <div className="miniList">
+                <span>ID {partner._id}</span>
+                <span>{partner.isEmailVerified ? "Verified" : "Not verified"}</span>
+              </div>
+              <button className="btn ghost small" onClick={() => pickPartner(partner)}>Select partner</button>
+            </article>
+          ))}
+        </section>
+      ) : null}
 
       <div className="pageHead mt"><span className="badge">Tracking</span><h1>{trackings.length} records</h1></div>
       {trackings.length ? (

@@ -304,6 +304,41 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// GET DELIVERY PARTNERS
+exports.getDeliveryPartners = async (req, res) => {
+  try {
+    const { search } = req.query;
+    const filter = {
+      role: "DELIVERY",
+      isBlocked: false,
+      isEmailVerified: true,
+    };
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const partners = await User.find(filter)
+      .select("-password -emailOtp -emailOtpExpires -resetOtp -resetOtpExpires")
+      .sort({ name: 1 });
+
+    res.status(200).json({
+      success: true,
+      total: partners.length,
+      partners,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch delivery partners",
+      error: error.message,
+    });
+  }
+};
+
 // ADMIN BLOCK USER
 exports.blockUserByAdmin = async (req, res) => {
   try {

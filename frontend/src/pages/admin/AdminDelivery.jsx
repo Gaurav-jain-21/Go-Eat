@@ -14,6 +14,7 @@ const blankAssign = {
 
 export default function AdminDelivery() {
   const [trackings, setTrackings] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [partnerId, setPartnerId] = useState("");
   const [partnerTrackings, setPartnerTrackings] = useState([]);
   const [assign, setAssign] = useState(blankAssign);
@@ -28,7 +29,12 @@ export default function AdminDelivery() {
     }
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    loadAll();
+    api.get("/api/auth/delivery-partners")
+      .then(({ data }) => setPartners(data.partners || []))
+      .catch(() => {});
+  }, []);
 
   const assignPartner = async (event) => {
     event.preventDefault();
@@ -62,6 +68,16 @@ export default function AdminDelivery() {
       deliveryPartnerId: tracking.deliveryPartnerId || "",
       deliveryPartnerName: tracking.deliveryPartnerName || "",
       deliveryPartnerPhone: tracking.deliveryPartnerPhone || "",
+    });
+  };
+
+  const pickPartner = (partner) => {
+    setPartnerId(partner._id);
+    setAssign({
+      ...assign,
+      deliveryPartnerId: partner._id,
+      deliveryPartnerName: partner.name,
+      deliveryPartnerPhone: partner.phone || "",
     });
   };
 
@@ -99,7 +115,14 @@ export default function AdminDelivery() {
           <h2>Assign delivery partner</h2>
           <div className="grid2">
             <input placeholder="Order id" value={assign.orderId} onChange={(event) => setAssign({ ...assign, orderId: event.target.value })} required />
-            <input placeholder="Partner id" value={assign.deliveryPartnerId} onChange={(event) => setAssign({ ...assign, deliveryPartnerId: event.target.value })} required />
+            <select value={assign.deliveryPartnerId} onChange={(event) => {
+              const partner = partners.find((item) => item._id === event.target.value);
+              if (partner) pickPartner(partner);
+              else setAssign({ ...assign, deliveryPartnerId: "" });
+            }} required>
+              <option value="">Select delivery partner</option>
+              {partners.map((partner) => <option key={partner._id} value={partner._id}>{partner.name} - {partner.email}</option>)}
+            </select>
             <input placeholder="Partner name" value={assign.deliveryPartnerName} onChange={(event) => setAssign({ ...assign, deliveryPartnerName: event.target.value })} />
             <input placeholder="Partner phone" value={assign.deliveryPartnerPhone} onChange={(event) => setAssign({ ...assign, deliveryPartnerPhone: event.target.value })} />
           </div>
@@ -112,6 +135,36 @@ export default function AdminDelivery() {
           <button className="btn full">Find partner orders</button>
         </form>
       </div>
+
+      {partners.length ? (
+        <>
+          <div className="pageHead mt"><span className="badge">Partners</span><h1>{partners.length} delivery partners</h1></div>
+          <section className="cards">
+            {partners.map((partner) => (
+              <article className="panel" key={partner._id}>
+                <div className="between wrap">
+                  <h2>{partner.name}</h2>
+                  <span className="pill green">DELIVERY</span>
+                </div>
+                <p className="muted">{partner.email}</p>
+                <div className="miniList">
+                  <span>ID {partner._id}</span>
+                  <span>{partner.isEmailVerified ? "Verified" : "Not verified"}</span>
+                </div>
+                <div className="row wrap mt">
+                  <button className="btn ghost small" onClick={() => pickPartner(partner)}>Select partner</button>
+                  <button className="btn small" onClick={() => {
+                    setPartnerId(partner._id);
+                    api.get(`/api/delivery/partner/${partner._id}`)
+                      .then(({ data }) => setPartnerTrackings(data.trackings || []))
+                      .catch((error) => toast.error(messageFromError(error, "Could not load partner orders")));
+                  }}>View orders</button>
+                </div>
+              </article>
+            ))}
+          </section>
+        </>
+      ) : null}
 
       {partnerTrackings.length ? (
         <>
