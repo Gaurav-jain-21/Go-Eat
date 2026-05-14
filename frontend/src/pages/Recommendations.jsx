@@ -8,6 +8,145 @@ import HotelCard from "../components/HotelCard";
 import EmptyState from "../components/EmptyState";
 import { getDeviceLocation, messageFromError, toCartItem } from "../utils/app";
 
+const LIMIT = 12;
+
+const getFoodScore = (food) => {
+  const rating = Number(food.rating || 0);
+  const totalOrders = Number(food.totalOrders || 0);
+  const reviewCount = Number(food.reviewCount || 0);
+
+  return rating * 40 + totalOrders * 0.5 + reviewCount * 2;
+};
+
+const getFoodKey = (food) => food._id || food.foodId || food.name || food.foodName;
+
+const getHotelKey = (hotel) => hotel._id || hotel.hotelId || hotel.hotelName;
+
+const toRecommendationFood = (food) => ({
+  _id: food._id,
+  foodId: food.foodId,
+  hotelId: food.hotelId,
+  hotelName: food.hotelName,
+  name: food.name || food.foodName,
+  foodName: food.foodName || food.name,
+  category: food.category,
+  price: food.price,
+  rating: food.rating,
+  totalOrders: food.totalOrders,
+  reviewCount: food.reviewCount,
+  isVeg: food.isVeg,
+  spiceLevel: food.spiceLevel,
+  isAvailable: food.isAvailable,
+});
+
+const toRecommendationHotel = (hotel) => ({
+  _id: hotel._id,
+  hotelId: hotel.hotelId,
+  hotelName: hotel.hotelName,
+  rating: hotel.rating,
+  totalOrders: hotel.totalOrders,
+  reviewCount: hotel.reviewCount,
+  lat: hotel.lat,
+  lng: hotel.lng,
+});
+
+const hydrateRecommendations = (items, originals, getKey) => {
+  const originalById = new Map(originals.map((item) => [getKey(item), item]));
+
+  return items.map((item) => ({
+    ...(originalById.get(getKey(item)) || {}),
+    ...item,
+  }));
+};
+
+const getHotelScore = (hotel) => {
+  const rating = Number(hotel.rating || 0);
+  const totalOrders = Number(hotel.totalOrders || 0);
+  const reviewCount = Number(hotel.reviewCount || 0);
+
+  return rating * 40 + totalOrders * 0.4 + reviewCount * 2;
+};
+
+const calculateDistanceKm = (lat1, lng1, lat2, lng2) => {
+  const radius = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  return Number((radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2));
+};
+
+const getTrendingFoods = (items) =>
+  [...items]
+    .map((food) => ({ ...food, recommendationScore: getFoodScore(food) }))
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, LIMIT);
+
+const getTopHotels = (items) =>
+  [...items]
+    .map((hotel) => ({ ...hotel, recommendationScore: getHotelScore(hotel) }))
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, LIMIT);
+
+const getPersonalizedFoods = (items, preferences = {}, budget) => {
+  const favoriteCuisines = preferences.favoriteCuisines || [];
+  const spiceLevel = preferences.spiceLevel || "";
+  let result = [...items];
+
+  if (budget) {
+    result = result.filter((food) => Number(food.price) <= Number(budget));
+  }
+
+  if (preferences.vegOnly) {
+    result = result.filter((food) => food.isVeg === true);
+  }
+
+  return result
+    .map((food) => {
+      let score = getFoodScore(food);
+      const category = food.category?.toLowerCase() || "";
+
+      if (favoriteCuisines.some((cuisine) => category.includes(cuisine.toLowerCase()))) {
+        score += 30;
+      }
+
+      if (spiceLevel && food.spiceLevel?.toLowerCase() === spiceLevel.toLowerCase()) {
+        score += 15;
+      }
+
+      if (food.isAvailable === false) {
+        score -= 100;
+      }
+
+      return { ...food, recommendationScore: Number(score.toFixed(2)) };
+    })
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, LIMIT);
+};
+
+const getNearbyHotels = (items, location) =>
+  items
+    .map((hotel) => {
+      const lat = hotel.location?.coordinates?.[1] || hotel.lat || 0;
+      const lng = hotel.location?.coordinates?.[0] || hotel.lng || 0;
+      const distanceKm = calculateDistanceKm(Number(location.lat), Number(location.lng), Number(lat), Number(lng));
+      let score = getHotelScore(hotel);
+
+      if (distanceKm <= 5) score += 30;
+      else if (distanceKm <= 10) score += 20;
+      else if (distanceKm <= 20) score += 10;
+
+      return { ...hotel, lat, lng, distanceKm, recommendationScore: Number(score.toFixed(2)) };
+    })
+    .filter((hotel) => hotel.distanceKm <= 20)
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, LIMIT);
+
 export default function Recommendations() {
   const navigate = useNavigate();
   const [foods, setFoods] = useState([]);
@@ -24,54 +163,95 @@ export default function Recommendations() {
 
   const load = async () => {
     setLoading(true);
-    try {
-      const [foodRes, hotelRes] = await Promise.all([
-        api.get("/api/foods"),
-        api.get("/api/hotels"),
-      ]);
-      const allFoods = foodRes.data.foods || [];
-      const allHotels = hotelRes.data.hotels || [];
+    setFoods([]);
+    setHotels([]);
 
-      if (mode === "trending") {
-        const { data } = await api.post("/api/recommendations/trending-foods", { foods: allFoods, limit: 12 });
-        setFoods(data.foods || []);
-        setHotels([]);
+    try {
+      if (mode === "trending" || mode === "personalized") {
+        const foodRes = await api.get("/api/foods");
+        const allFoods = foodRes.data.foods || [];
+        const recommendationFoods = allFoods.map(toRecommendationFood);
+
+        if (mode === "trending") {
+          const fallbackFoods = getTrendingFoods(allFoods);
+
+          try {
+            const { data } = await api.post("/api/recommendations/trending-foods", {
+              foods: recommendationFoods,
+              limit: LIMIT,
+            });
+            const recommendedFoods = hydrateRecommendations(data.foods || [], allFoods, getFoodKey);
+            setFoods(recommendedFoods.length ? recommendedFoods : fallbackFoods);
+          } catch {
+            setFoods(fallbackFoods);
+          }
+
+          return;
+        }
+
+        const preferences = profile?.preferences || {};
+        const userBudget = budget ? Number(budget) : undefined;
+        const fallbackFoods = getPersonalizedFoods(allFoods, preferences, userBudget);
+
+        try {
+          const { data } = await api.post("/api/recommendations/personalized-foods", {
+            foods: recommendationFoods,
+            userPreferences: preferences,
+            budget: userBudget,
+            limit: LIMIT,
+          });
+          const recommendedFoods = hydrateRecommendations(data.foods || [], allFoods, getFoodKey);
+          setFoods(recommendedFoods.length ? recommendedFoods : fallbackFoods);
+        } catch {
+          setFoods(fallbackFoods);
+        }
+
         return;
       }
 
+      const hotelRes = await api.get("/api/hotels");
+      const allHotels = hotelRes.data.hotels || [];
+      const recommendationHotels = allHotels.map(toRecommendationHotel);
+
       if (mode === "hotels") {
-        const { data } = await api.post("/api/recommendations/top-hotels", { hotels: allHotels, limit: 12 });
-        setHotels(data.hotels || []);
-        setFoods([]);
+        const fallbackHotels = getTopHotels(allHotels);
+
+        try {
+          const { data } = await api.post("/api/recommendations/top-hotels", {
+            hotels: recommendationHotels,
+            limit: LIMIT,
+          });
+          const recommendedHotels = hydrateRecommendations(data.hotels || [], allHotels, getHotelKey);
+          setHotels(recommendedHotels.length ? recommendedHotels : fallbackHotels);
+        } catch {
+          setHotels(fallbackHotels);
+        }
+
         return;
       }
 
       if (mode === "nearby") {
         const location = await getDeviceLocation();
         const hotelPayload = allHotels.map((hotel) => ({
-          ...hotel,
+          ...toRecommendationHotel(hotel),
           lat: hotel.location?.coordinates?.[1] || 0,
           lng: hotel.location?.coordinates?.[0] || 0,
         }));
-        const { data } = await api.post("/api/recommendations/nearby-hotels", {
-          hotels: hotelPayload,
-          userLocation: location,
-          radiusKm: 20,
-          limit: 12,
-        });
-        setHotels(data.hotels || []);
-        setFoods([]);
-        return;
-      }
+        const fallbackHotels = getNearbyHotels(allHotels, location);
 
-      const { data } = await api.post("/api/recommendations/personalized-foods", {
-        foods: allFoods,
-        userPreferences: profile?.preferences || {},
-        budget: budget ? Number(budget) : undefined,
-        limit: 12,
-      });
-      setFoods(data.foods || []);
-      setHotels([]);
+        try {
+          const { data } = await api.post("/api/recommendations/nearby-hotels", {
+            hotels: hotelPayload,
+            userLocation: location,
+            radiusKm: 20,
+            limit: LIMIT,
+          });
+          const recommendedHotels = hydrateRecommendations(data.hotels || [], allHotels, getHotelKey);
+          setHotels(recommendedHotels.length ? recommendedHotels : fallbackHotels);
+        } catch {
+          setHotels(fallbackHotels);
+        }
+      }
     } catch (error) {
       toast.error(messageFromError(error, "Could not load recommendations"));
     } finally {

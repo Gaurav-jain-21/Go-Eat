@@ -130,7 +130,7 @@ exports.updateLiveLocation = async (req, res) => {
   try {
     const { lat, lng, estimatedMinutes } = req.body;
 
-    if (!lat || !lng) {
+    if (lat === undefined || lng === undefined || lat === "" || lng === "") {
       return res.status(400).json({
         success: false,
         message: "lat and lng are required",
