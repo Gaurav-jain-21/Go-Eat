@@ -1,110 +1,48 @@
 import { useState } from "react";
-import api from "../api/api";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import api from "../api/api";
+import { messageFromError } from "../utils/app";
 
 export default function Register() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "USER", lat: "", lng: "" });
+  const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "USER",
-  });
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const register = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      role: form.role,
-      lat: 22.3039,
-      lng: 70.8022,
-    };
-
-    console.log("Sending register payload:", payload);
-
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/register", payload);
-
-      console.log("Register response:", data);
-
-      toast.success(data.message || "Registration successful");
-
-      localStorage.setItem("verifyEmail", form.email);
-
-      navigate("/verify-email");
+      await api.post("/api/auth/register", form);
+      toast.success("OTP sent to your email");
+      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (error) {
-      console.log("Register error full:", error);
-      console.log("Backend error:", error.response?.data);
-
-      toast.error(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Register failed",
-      );
+      toast.error(messageFromError(error, "Registration failed"));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-orange-50">
-      <form
-        onSubmit={register}
-        className="bg-white p-8 rounded-2xl shadow w-96"
-      >
-        <h1 className="text-3xl font-bold text-orange-500 mb-6">Register</h1>
-
-        <input
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Name"
-          className="border p-3 w-full mb-3 rounded"
-          required
-        />
-
-        <input
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-          className="border p-3 w-full mb-3 rounded"
-          required
-        />
-
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Password"
-          className="border p-3 w-full mb-3 rounded"
-          required
-        />
-
-        <select
-          name="role"
-          value={form.role}
-          onChange={handleChange}
-          className="border p-3 w-full mb-3 rounded"
-        >
-          <option value="USER">USER</option>
-          <option value="HOTEL">HOTEL</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
-
-        <button className="bg-orange-500 text-white p-3 w-full rounded">
-          Register
-        </button>
+    <main className="authPage">
+      <form className="authCard wide" onSubmit={submit}>
+        <span className="badge">Start with GoEat</span>
+        <h1>Create account</h1>
+        <div className="grid2">
+          <input placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+            <option value="USER">Customer</option>
+            <option value="HOTEL">Hotel owner</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          <input placeholder="Latitude optional" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} />
+          <input placeholder="Longitude optional" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} />
+        </div>
+        <button className="btn full" disabled={loading}>{loading ? "Creating..." : "Create account"}</button>
+        <p className="muted center">Already registered? <Link to="/login">Login</Link></p>
       </form>
-    </div>
+    </main>
   );
 }

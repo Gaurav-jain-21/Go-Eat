@@ -1,49 +1,37 @@
 import { useState } from "react";
-import api from "../api/api";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import api from "../api/api";
+import { messageFromError, saveSession } from "../utils/app";
 
 export default function VerifyEmail() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
+  const [email, setEmail] = useState(params.get("email") || "");
   const [otp, setOtp] = useState("");
-  const email = localStorage.getItem("verifyEmail");
 
-  const verify = async (e) => {
-    e.preventDefault();
-
+  const submit = async (event) => {
+    event.preventDefault();
     try {
-      const { data } = await api.post("/api/auth/verify-email", {
-        email,
-        otp,
-      });
-
-      toast.success(data.message);
-      navigate("/login");
+      const { data } = await api.post("/api/auth/verify-email", { email, otp });
+      saveSession(data.token, data.user);
+      toast.success("Email verified");
+      navigate("/foods");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Verification failed");
+      toast.error(messageFromError(error, "Verification failed"));
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center">
-      <form onSubmit={verify} className="bg-white p-8 rounded-2xl shadow w-96">
-        <h1 className="text-3xl font-bold text-orange-500 mb-6">
-          Verify Email
-        </h1>
-
-        <p className="mb-4 text-gray-600">{email}</p>
-
-        <input
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-          placeholder="Enter OTP"
-          className="border p-3 w-full mb-3 rounded"
-        />
-
-        <button className="bg-orange-500 text-white p-3 w-full rounded">
-          Verify
-        </button>
+    <main className="authPage">
+      <form className="authCard" onSubmit={submit}>
+        <span className="badge">Email OTP</span>
+        <h1>Verify email</h1>
+        <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input placeholder="6 digit OTP" value={otp} onChange={(e) => setOtp(e.target.value)} required />
+        <button className="btn full">Verify</button>
+        <p className="muted center"><Link to="/login">Back to login</Link></p>
       </form>
-    </div>
+    </main>
   );
 }

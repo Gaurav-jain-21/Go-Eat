@@ -1,61 +1,46 @@
 import { useState } from "react";
-import api from "../api/api";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import api from "../api/api";
+import { getDeviceLocation, messageFromError, saveSession } from "../utils/app";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
-  const login = async (e) => {
-    e.preventDefault();
-
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
     try {
       const { data } = await api.post("/api/auth/login", form);
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user.role);
-      localStorage.setItem("userId", data.user.userId);
-      localStorage.setItem("name", data.user.name);
-
-      toast.success("Login successful");
-
-      if (data.user.role === "USER") navigate("/foods");
-      if (data.user.role === "HOTEL") navigate("/hotels");
-      if (data.user.role === "ADMIN") navigate("/");
+      saveSession(data.token, data.user);
+      if (data.user.role === "USER") {
+        getDeviceLocation()
+          .then((location) => api.put("/api/auth/location", location))
+          .catch(() => {});
+      }
+      toast.success("Welcome back");
+      navigate(data.user.role === "HOTEL" ? "/" : data.user.role === "ADMIN" ? "/admin/dashboard" : "/");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+      toast.error(messageFromError(error, "Login failed"));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center">
-      <form onSubmit={login} className="bg-white p-8 rounded-2xl shadow w-96">
-        <h1 className="text-3xl font-bold text-orange-500 mb-6">Login</h1>
-
-        <input
-          name="email"
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          placeholder="Email"
-          className="border p-3 w-full mb-3 rounded"
-        />
-
-        <input
-          name="password"
-          type="password"
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          placeholder="Password"
-          className="border p-3 w-full mb-3 rounded"
-        />
-
-        <button className="bg-orange-500 text-white p-3 w-full rounded">
-          Login
-        </button>
+    <main className="authPage">
+      <form className="authCard" onSubmit={submit}>
+        <span className="badge">GoEat account</span>
+        <h1>Login</h1>
+        <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+        <button className="btn full" disabled={loading}>{loading ? "Signing in..." : "Login"}</button>
+        <p className="muted center">
+          <Link to="/forgot-password">Forgot password?</Link> · <Link to="/register">Create account</Link>
+        </p>
       </form>
-    </div>
+    </main>
   );
 }
