@@ -15,6 +15,8 @@ import {
   User,
   Utensils,
   Heart,
+  Star,
+  Truck,
 } from "lucide-react";
 import { clearSession, getUser } from "../utils/app";
 
@@ -30,6 +32,7 @@ const roleLinks = {
     { to: "/", label: "Home", icon: Home },
     { to: "/hotel/foods", label: "Hotel's Food", icon: Utensils },
     { to: "/hotel/orders", label: "Hotel's Orders", icon: ClipboardList },
+    { to: "/hotel/delivery", label: "Delivery", icon: Truck },
     { to: "/hotel/payments", label: "Payments", icon: CreditCard },
     { to: "/notifications", label: "Notification", icon: Bell },
   ],
@@ -39,7 +42,9 @@ const roleLinks = {
     { to: "/admin/hotels", label: "Hotels", icon: Store },
     { to: "/admin/foods", label: "Foods", icon: Utensils },
     { to: "/admin/orders", label: "Orders", icon: ClipboardList },
+    { to: "/admin/delivery", label: "Delivery", icon: Truck },
     { to: "/admin/payments", label: "Payments", icon: CreditCard },
+    { to: "/admin/notifications", label: "Notifications", icon: Bell },
   ],
 };
 
@@ -68,6 +73,7 @@ export default function Navbar() {
         : [
             { to: "/profile", label: "Profile settings" },
             { to: "/favorites", label: "Favorites", icon: Heart },
+            { to: "/reviews", label: "Reviews", icon: Star },
             { to: "/orders", label: "Orders" },
             { to: "/payments", label: "Payments" },
           ];

@@ -28,6 +28,7 @@ import CreateHotel from "./pages/hotel/CreateHotel";
 import AddFood from "./pages/hotel/AddFood";
 import HotelFoods from "./pages/hotel/HotelFoods";
 import HotelOrders from "./pages/hotel/HotelOrders";
+import HotelDelivery from "./pages/hotel/HotelDelivery";
 import HotelPayments from "./pages/hotel/HotelPayments";
 import HotelProfile from "./pages/hotel/HotelProfile";
 import HotelPastOrders from "./pages/hotel/HotelPastOrders";
@@ -36,7 +37,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminHotels from "./pages/admin/AdminHotels";
 import AdminFoods from "./pages/admin/AdminFoods";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminDelivery from "./pages/admin/AdminDelivery";
 import AdminPayments from "./pages/admin/AdminPayments";
+import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminLogs from "./pages/admin/AdminLogs";
 
 export default function App() {
@@ -70,6 +73,7 @@ export default function App() {
       <Route path="/hotel/add-food" element={<AddFood />} />
       <Route path="/hotel/foods" element={<HotelFoods />} />
       <Route path="/hotel/orders" element={<HotelOrders />} />
+      <Route path="/hotel/delivery" element={<HotelDelivery />} />
       <Route path="/hotel/payments" element={<HotelPayments />} />
       <Route path="/hotel/profile" element={<HotelProfile />} />
       <Route path="/hotel/past-orders" element={<HotelPastOrders />} />
@@ -78,7 +82,9 @@ export default function App() {
       <Route path="/admin/hotels" element={<AdminHotels />} />
       <Route path="/admin/foods" element={<AdminFoods />} />
       <Route path="/admin/orders" element={<AdminOrders />} />
+      <Route path="/admin/delivery" element={<AdminDelivery />} />
       <Route path="/admin/payments" element={<AdminPayments />} />
+      <Route path="/admin/notifications" element={<AdminNotifications />} />
       <Route path="/admin/logs" element={<AdminLogs />} />
     </Routes>
     <FloatingAI />
