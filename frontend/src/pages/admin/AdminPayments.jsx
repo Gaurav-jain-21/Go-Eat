@@ -38,11 +38,11 @@ export default function AdminPayments() {
         amount: refund.amount ? Number(refund.amount) : undefined,
         reason: refund.reason,
       });
-      toast.success("Refund completed");
+      toast.success("Razorpay refund completed");
       setRefund({ orderId: "", amount: "", reason: "" });
       load();
     } catch (error) {
-      toast.error(messageFromError(error, "Refund failed"));
+      toast.error(messageFromError(error, "Razorpay refund failed"));
     }
   };
 
@@ -68,7 +68,7 @@ export default function AdminPayments() {
       <div className="pageHead">
         <span className="badge">Admin payments</span>
         <h1>Payment control</h1>
-        <p className="muted">View all Razorpay payment records, filter them, and process refunds.</p>
+        <p className="muted">View Razorpay payment records and process refunds through the Razorpay refund API.</p>
       </div>
 
       <section className="dashGrid">
@@ -96,13 +96,13 @@ export default function AdminPayments() {
         </form>
 
         <form className="panel" onSubmit={refundPayment}>
-          <h2>Refund payment</h2>
+          <h2>Razorpay refund</h2>
           <div className="grid2">
             <input className="span2" placeholder="Order id" value={refund.orderId} onChange={(event) => setRefund({ ...refund, orderId: event.target.value })} required />
             <input placeholder="Amount optional" value={refund.amount} onChange={(event) => setRefund({ ...refund, amount: event.target.value })} />
             <input placeholder="Reason" value={refund.reason} onChange={(event) => setRefund({ ...refund, reason: event.target.value })} />
           </div>
-          <button className="dangerBtn full">Refund payment</button>
+          <button className="dangerBtn full">Create Razorpay refund</button>
         </form>
       </div>
 
@@ -152,7 +152,7 @@ export default function AdminPayments() {
                 </div>
               )}
               {payment.status === "SUCCESS" && (
-                <button className="dangerBtn small" onClick={() => setRefund({ orderId: payment.orderId, amount: payment.amount, reason: "Admin refund" })}>Prepare refund</button>
+                <button className="dangerBtn small" onClick={() => setRefund({ orderId: payment.orderId, amount: payment.amount, reason: "Admin Razorpay refund" })}>Prepare Razorpay refund</button>
               )}
             </article>
           ))}
