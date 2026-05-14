@@ -24,6 +24,9 @@ export default function HotelDetails() {
     api.get(`/api/reviews/hotel/${id}`)
       .then(({ data }) => setAverage(data.average || { averageRating: 0, totalReviews: 0 }))
       .catch(() => {});
+    api.get("/api/reviews/average", { params: { targetType: "HOTEL", targetId: id } })
+      .then(({ data }) => setAverage(data.average || { averageRating: 0, totalReviews: 0 }))
+      .catch(() => {});
   }, [id]);
 
   const addToCart = async (food) => {

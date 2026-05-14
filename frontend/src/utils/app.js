@@ -65,7 +65,8 @@ export const toCartItem = (food, quantity = 1) => ({
   hotelId: food.hotelId,
   hotelName: food.hotelName,
   foodName: food.name || food.foodName,
-  image: food.image,
+  name: food.name || food.foodName,
+  image: food.image || "",
   price: Number(food.price),
   quantity,
 });

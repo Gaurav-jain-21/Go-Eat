@@ -11,6 +11,8 @@ export default function AdminPayments() {
   const [payments, setPayments] = useState([]);
   const [filters, setFilters] = useState({ status: "", userId: "", orderId: "" });
   const [refund, setRefund] = useState({ orderId: "", amount: "", reason: "" });
+  const [lookupOrderId, setLookupOrderId] = useState("");
+  const [lookupPayment, setLookupPayment] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -41,6 +43,17 @@ export default function AdminPayments() {
       load();
     } catch (error) {
       toast.error(messageFromError(error, "Refund failed"));
+    }
+  };
+
+  const findPayment = async (event) => {
+    event.preventDefault();
+    setLookupPayment(null);
+    try {
+      const { data } = await api.get(`/api/admin/payments/order/${lookupOrderId}`);
+      setLookupPayment(data.payment);
+    } catch (error) {
+      toast.error(messageFromError(error, "Payment not found for this order"));
     }
   };
 
@@ -92,6 +105,27 @@ export default function AdminPayments() {
           <button className="dangerBtn full">Refund payment</button>
         </form>
       </div>
+
+      <form className="filterBar compact" onSubmit={findPayment}>
+        <input placeholder="Lookup one payment by order id" value={lookupOrderId} onChange={(event) => setLookupOrderId(event.target.value)} required />
+        <button className="btn">Lookup payment</button>
+      </form>
+
+      {lookupPayment && (
+        <article className="panel mt">
+          <div className="between wrap">
+            <h2>Order #{String(lookupPayment.orderId).slice(-6)}</h2>
+            <span className={statusClass(lookupPayment.status)}>{lookupPayment.status}</span>
+            <strong>{currency(lookupPayment.amount)}</strong>
+          </div>
+          <div className="miniList">
+            <span>User {lookupPayment.userId}</span>
+            <span>{lookupPayment.currency}</span>
+            <span>Razorpay order: {lookupPayment.razorpayOrderId || "-"}</span>
+            <span>Payment: {lookupPayment.razorpayPaymentId || "Pending"}</span>
+          </div>
+        </article>
+      )}
 
       <div className="pageHead mt"><span className="badge">All payments</span><h1>{payments.length} records</h1></div>
       {payments.length ? (

@@ -5,7 +5,15 @@ import toast from "react-hot-toast";
 import api from "../api/api";
 import EmptyState from "../components/EmptyState";
 import FoodCard from "../components/FoodCard";
-import { currency, fallbackFood, getUser, messageFromError } from "../utils/app";
+import { currency, fallbackFood, getUser, messageFromError, toCartItem } from "../utils/app";
+
+const normalizeFoodItem = (selectedFood = {}) => ({
+  ...selectedFood,
+  _id: selectedFood?._id || selectedFood?.foodId,
+  foodId: selectedFood?.foodId || selectedFood?._id,
+  name: selectedFood?.name || selectedFood?.foodName,
+  foodName: selectedFood?.foodName || selectedFood?.name,
+});
 
 export default function FoodDetails() {
   const { id } = useParams();
@@ -16,54 +24,95 @@ export default function FoodDetails() {
   const [similarFoods, setSimilarFoods] = useState([]);
   const [average, setAverage] = useState({ averageRating: 0, totalReviews: 0 });
   const [review, setReview] = useState({ rating: 5, comment: "" });
+  const [addingId, setAddingId] = useState("");
+  const [loadingFood, setLoadingFood] = useState(true);
+  const [foodMissing, setFoodMissing] = useState(false);
 
   const loadReviews = useCallback(async () => {
     const { data } = await api.get(`/api/reviews/food/${id}`);
     setReviews(data.reviews || []);
     setAverage(data.average || { averageRating: 0, totalReviews: 0 });
+    api.get("/api/reviews/average", { params: { targetType: "FOOD", targetId: id } })
+      .then(({ data: averageData }) => setAverage(averageData.average || data.average || { averageRating: 0, totalReviews: 0 }))
+      .catch(() => {});
   }, [id]);
 
+  const loadSimilarFoods = useCallback(async (currentFood) => {
+    try {
+      const { data } = await api.get("/api/foods");
+      const allFoods = data.foods || [];
+      const response = await api.post("/api/recommendations/similar-foods", {
+        currentFood: {
+          ...currentFood,
+          foodId: currentFood._id,
+        },
+        foods: allFoods.map((item) => ({
+          ...item,
+          foodId: item._id,
+        })),
+        limit: 6,
+      });
+      setSimilarFoods((response.data.foods || []).map(normalizeFoodItem));
+    } catch {
+      const fallbackFoods = await api.get("/api/foods")
+        .then(({ data }) => (data.foods || [])
+          .filter((item) => item._id !== currentFood._id)
+          .sort((a, b) => {
+            const aCategory = a.category === currentFood.category ? 1 : 0;
+            const bCategory = b.category === currentFood.category ? 1 : 0;
+            return bCategory - aCategory || Math.abs(Number(a.price) - Number(currentFood.price)) - Math.abs(Number(b.price) - Number(currentFood.price));
+          })
+          .slice(0, 6))
+        .catch(() => []);
+      setSimilarFoods(fallbackFoods.map(normalizeFoodItem));
+    }
+  }, []);
+
   useEffect(() => {
+    setLoadingFood(true);
+    setFoodMissing(false);
+    setFood(null);
+    setSimilarFoods([]);
+
     api.get(`/api/foods/${id}`)
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         setFood(data.food);
-        const allFoods = await api.get("/api/foods");
-        const response = await api.post("/api/recommendations/similar-foods", {
-          currentFood: {
-            ...data.food,
-            foodId: data.food._id,
-          },
-          foods: (allFoods.data.foods || []).map((item) => ({
-            ...item,
-            foodId: item._id,
-          })),
-          limit: 6,
-        });
-        setSimilarFoods(response.data.foods || []);
+        loadSimilarFoods(data.food);
       })
-      .catch((error) => toast.error(messageFromError(error, "Food not found")));
+      .catch((error) => {
+        setFoodMissing(true);
+        toast.error(messageFromError(error, "Food not found"));
+      })
+      .finally(() => setLoadingFood(false));
     loadReviews().catch(() => {});
-  }, [id, loadReviews]);
+  }, [id, loadReviews, loadSimilarFoods]);
 
   const addToCart = async (selectedFood = food) => {
+    const item = normalizeFoodItem(selectedFood || food);
+    if (!item?._id || !item.hotelId || !item.name || !item.hotelName || !item.price) {
+      toast.error("Food details are incomplete");
+      return;
+    }
+
+    setAddingId(item._id);
     try {
-      await api.post("/api/cart/add", {
-        foodId: selectedFood._id || selectedFood.foodId,
-        hotelId: selectedFood.hotelId,
-        foodName: selectedFood.name,
-        hotelName: selectedFood.hotelName,
-        image: selectedFood.image,
-        price: selectedFood.price,
-        quantity: 1,
-      });
+      await api.post("/api/cart/add", toCartItem(item));
       toast.success("Added to cart");
     } catch (error) {
       toast.error(messageFromError(error, "Login as customer to add cart items"));
+    } finally {
+      setAddingId("");
     }
   };
 
   const orderNow = (selectedFood = food) => {
-    localStorage.setItem("buyNowItem", JSON.stringify({ ...selectedFood, _id: selectedFood._id || selectedFood.foodId }));
+    const item = normalizeFoodItem(selectedFood || food);
+    if (!item?._id || !item.hotelId || !item.name || !item.hotelName || !item.price) {
+      toast.error("Food details are incomplete");
+      return;
+    }
+
+    localStorage.setItem("buyNowItem", JSON.stringify(item));
     navigate("/checkout?mode=buy-now");
   };
 
@@ -95,8 +144,12 @@ export default function FoodDetails() {
     }
   };
 
-  if (!food) {
+  if (loadingFood) {
     return <main className="page"><p className="muted">Loading food...</p></main>;
+  }
+
+  if (foodMissing || !food) {
+    return <main className="page"><EmptyState title="Food not found" text="This dish may have been removed or the link is invalid." /></main>;
   }
 
   return (
@@ -113,8 +166,8 @@ export default function FoodDetails() {
             <strong className="price">{currency(food.price)}</strong>
           </div>
           <div className="row wrap mt">
-            <button className="btn" onClick={addToCart}><ShoppingCart size={18} /> Add to cart</button>
-            <button className="btn ghost" onClick={orderNow}><Zap size={18} /> Order now</button>
+            <button className="btn" onClick={() => addToCart()} disabled={addingId === food._id}><ShoppingCart size={18} /> {addingId === food._id ? "Adding..." : "Add to cart"}</button>
+            <button className="btn ghost" onClick={() => orderNow()}><Zap size={18} /> Order now</button>
             <button className="btn ghost" onClick={addFavorite}><Heart size={18} /> Favorite</button>
           </div>
         </div>
@@ -157,9 +210,9 @@ export default function FoodDetails() {
         <section className="cards">
           {similarFoods.map((item) => (
             <div key={item._id || item.foodId}>
-              <FoodCard food={{ ...item, _id: item._id || item.foodId }} onAdd={addToCart} />
+              <FoodCard food={normalizeFoodItem(item)} onAdd={addToCart} />
               <div className="cardActions">
-                <button className="btn small" onClick={() => addToCart(item)}><ShoppingCart size={15} /> Add cart</button>
+                <button className="btn small" onClick={() => addToCart(item)} disabled={addingId === (item._id || item.foodId)}><ShoppingCart size={15} /> {addingId === (item._id || item.foodId) ? "Adding..." : "Add cart"}</button>
                 <button className="btn ghost small" onClick={() => orderNow(item)}><Zap size={15} /> Order now</button>
               </div>
             </div>

@@ -9,7 +9,14 @@ VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_db")
 client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
 collection = client.get_or_create_collection(name="goeat_docs")
 
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = None
+
+
+def get_embedding_model():
+    global embedding_model
+    if embedding_model is None:
+        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return embedding_model
 
 
 def split_text(text: str, chunk_size: int = 700, overlap: int = 100):
@@ -52,7 +59,7 @@ def ingest_documents():
     if existing and existing.get("ids"):
         collection.delete(ids=existing["ids"])
 
-    embeddings = embedding_model.encode(documents).tolist()
+    embeddings = get_embedding_model().encode(documents).tolist()
 
     collection.add(
         documents=documents,
@@ -68,7 +75,7 @@ def ingest_documents():
 
 
 def search_context(query: str, top_k: int = 3) -> str:
-    query_embedding = embedding_model.encode([query]).tolist()[0]
+    query_embedding = get_embedding_model().encode([query]).tolist()[0]
 
     results = collection.query(
         query_embeddings=[query_embedding],

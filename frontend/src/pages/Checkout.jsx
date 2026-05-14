@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../api/api";
+import EmptyState from "../components/EmptyState";
 import { currency, getDeviceLocation, getUser, loadRazorpay, messageFromError, toCartItem } from "../utils/app";
 import {
   notifyHotelsNewOrder,
@@ -16,6 +17,7 @@ export default function Checkout() {
   const user = getUser();
   const [cart, setCart] = useState(null);
   const [buyNow, setBuyNow] = useState(null);
+  const [cartLoaded, setCartLoaded] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [form, setForm] = useState({ userName: user?.name || "", userPhone: "", fullAddress: "", city: "", pincode: "", lat: "", lng: "", paymentMethod: "COD" });
 
@@ -26,9 +28,14 @@ export default function Checkout() {
         setBuyNow(JSON.parse(storedBuyNow));
       } catch {
         localStorage.removeItem("buyNowItem");
+      } finally {
+        setCartLoaded(true);
       }
     } else {
-      api.get("/api/cart").then(({ data }) => setCart(data.cart)).catch(() => {});
+      api.get("/api/cart")
+        .then(({ data }) => setCart(data.cart))
+        .catch(() => {})
+        .finally(() => setCartLoaded(true));
     }
 
     api.get("/api/auth/me").then(({ data }) => {
@@ -62,9 +69,11 @@ export default function Checkout() {
   }, [params]);
 
   const checkoutItems = buyNow ? [toCartItem(buyNow)] : (cart?.items || []).map(({ foodId, hotelId, hotelName, foodName, image, price, quantity }) => ({ foodId, hotelId, hotelName, foodName, image, price, quantity }));
+  const hasItems = checkoutItems.length > 0;
   const foodTotal = checkoutItems.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
   const taxAmount = Math.round(foodTotal * 0.05);
-  const finalAmount = foodTotal + taxAmount + 30;
+  const deliveryCharge = hasItems ? 30 : 0;
+  const finalAmount = foodTotal + taxAmount + deliveryCharge;
 
   const payWithRazorpay = async (order) => {
     const loaded = await loadRazorpay();
@@ -141,7 +150,7 @@ export default function Checkout() {
         userPhone: form.userPhone,
         paymentMethod: form.paymentMethod,
         items: checkoutItems,
-        deliveryAddress: { fullAddress: form.fullAddress, city: form.city, pincode: form.pincode, lat: form.lat, lng: form.lng },
+        deliveryAddress: { fullAddress: form.fullAddress, city: form.city, pincode: form.pincode, lat: Number(form.lat) || undefined, lng: Number(form.lng) || undefined },
       });
 
       if (form.paymentMethod === "RAZORPAY") {
@@ -173,6 +182,12 @@ export default function Checkout() {
   return (
     <main className="page">
       <div className="pageHead"><span className="badge">Checkout</span><h1>Confirm delivery</h1></div>
+      {!hasItems && cartLoaded ? (
+        <EmptyState title="No food selected" text="Add dishes to your cart or use Order now from a food page." />
+      ) : null}
+      {!hasItems && cartLoaded ? <Link className="btn mt" to="/foods">Browse foods</Link> : null}
+      {!hasItems && !cartLoaded && !buyNow ? <p className="muted">Loading checkout...</p> : null}
+      {hasItems && (
       <div className="checkoutGrid">
         <form className="panel" onSubmit={submit}>
           <div className="grid2">
@@ -193,12 +208,13 @@ export default function Checkout() {
           <h2>Payment</h2>
           <p className="between"><span>Items</span><strong>{checkoutItems.reduce((sum, item) => sum + Number(item.quantity), 0)}</strong></p>
           <p className="between"><span>Food total</span><strong>{currency(foodTotal)}</strong></p>
-          <p className="between"><span>Delivery</span><strong>{currency(30)}</strong></p>
+          <p className="between"><span>Delivery</span><strong>{currency(deliveryCharge)}</strong></p>
           <p className="between"><span>Tax</span><strong>{currency(taxAmount)}</strong></p>
           <hr />
           <p className="between big"><span>Total</span><strong>{currency(finalAmount)}</strong></p>
         </aside>
       </div>
+      )}
     </main>
   );
 }

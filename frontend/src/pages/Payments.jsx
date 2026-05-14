@@ -10,6 +10,8 @@ const statusClass = (status) =>
 export default function Payments() {
   const [payments, setPayments] = useState([]);
   const [orders, setOrders] = useState({});
+  const [lookupOrderId, setLookupOrderId] = useState("");
+  const [lookupPayment, setLookupPayment] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +39,17 @@ export default function Payments() {
     return acc;
   }, { total: 0 });
 
+  const findPayment = async (event) => {
+    event.preventDefault();
+    setLookupPayment(null);
+    try {
+      const { data } = await api.get(`/api/payments/order/${lookupOrderId}`);
+      setLookupPayment(data.payment);
+    } catch (error) {
+      toast.error(messageFromError(error, "Payment not found for this order"));
+    }
+  };
+
   return (
     <main className="page">
       <div className="pageHead">
@@ -51,6 +64,26 @@ export default function Payments() {
         <div className="dashCard">Created <strong>{totals.CREATED || 0}</strong></div>
         <div className="dashCard">Refunded <strong>{totals.REFUNDED || 0}</strong></div>
       </section>
+
+      <form className="filterBar compact" onSubmit={findPayment}>
+        <input placeholder="Find payment by order id" value={lookupOrderId} onChange={(event) => setLookupOrderId(event.target.value)} required />
+        <button className="btn">Find payment</button>
+      </form>
+
+      {lookupPayment && (
+        <article className="panel mt">
+          <div className="between wrap">
+            <h2>Order #{String(lookupPayment.orderId).slice(-6)}</h2>
+            <span className={statusClass(lookupPayment.status)}>{lookupPayment.status}</span>
+            <strong>{currency(lookupPayment.amount)}</strong>
+          </div>
+          <div className="miniList">
+            <span>{lookupPayment.currency}</span>
+            <span>Razorpay order: {lookupPayment.razorpayOrderId || "-"}</span>
+            <span>Payment id: {lookupPayment.razorpayPaymentId || "Pending"}</span>
+          </div>
+        </article>
+      )}
 
       {payments.length ? (
         <section className="stack mt">

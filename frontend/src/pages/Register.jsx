@@ -13,7 +13,8 @@ export default function Register() {
     event.preventDefault();
     setLoading(true);
     try {
-      await api.post("/api/auth/register", form);
+      const role = ["USER", "HOTEL", "DELIVERY"].includes(form.role) ? form.role : "USER";
+      await api.post("/api/auth/register", { ...form, role });
       toast.success("OTP sent to your email");
       navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
     } catch (error) {
@@ -36,7 +37,6 @@ export default function Register() {
             <option value="USER">Customer</option>
             <option value="HOTEL">Hotel owner</option>
             <option value="DELIVERY">Delivery partner</option>
-            <option value="ADMIN">Admin</option>
           </select>
           <input placeholder="Latitude optional" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} />
           <input placeholder="Longitude optional" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} />

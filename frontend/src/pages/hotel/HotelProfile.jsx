@@ -99,6 +99,22 @@ export default function HotelProfile() {
     }
   };
 
+  const removeHotel = async () => {
+    if (!selectedHotel) return;
+    const confirmed = window.confirm(`Delete ${selectedHotel.hotelName}? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/api/hotels/${selectedHotel._id}`);
+      toast.success("Hotel deleted");
+      setHotelId("");
+      setHotels([]);
+      load();
+    } catch (error) {
+      toast.error(messageFromError(error, "Could not delete hotel"));
+    }
+  };
+
   return (
     <main className="page">
       <div className="pageHead between wrap">
@@ -133,6 +149,7 @@ export default function HotelProfile() {
 
           <div className="row wrap mt">
             <button className="btn" onClick={startEdit}>Edit hotel profile</button>
+            <button className="dangerBtn" onClick={removeHotel}>Delete hotel</button>
           </div>
         </>
       ) : (

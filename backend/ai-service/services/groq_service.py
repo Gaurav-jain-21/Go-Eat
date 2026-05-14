@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv(
@@ -10,17 +11,18 @@ GROQ_MODEL = os.getenv(
     "llama-3.3-70b-versatile"
 )
 
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
-)
-
-
 def ask_groq(
     message: str,
     system_prompt: str = None,
     context: str = None,
 ):
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY is missing in ai-service .env")
+
+    client = OpenAI(
+        api_key=GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1"
+    )
 
     final_system_prompt = system_prompt or (
         "You are GoEat AI assistant."

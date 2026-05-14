@@ -34,6 +34,17 @@ body {
     linear-gradient(180deg, #fff 0%, #fafafa 42%, #f5f5f5 100%);
   color: var(--ink);
 }
+#root {
+  min-height: 100vh;
+}
+.appShell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.appContent {
+  flex: 1;
+}
 a {
   text-decoration: none;
   color: inherit;
@@ -121,6 +132,18 @@ body:before {
   background: var(--red-soft);
   color: var(--red);
   transform: translateY(-1px);
+}
+.navBadge {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--red);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
 }
 .navActions {
   gap: 9px;
@@ -306,6 +329,42 @@ body:before {
   font-weight: 950;
   color: var(--red);
 }
+.sliderControls {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(238, 238, 238, 0.9);
+  box-shadow: 0 12px 30px rgba(28, 28, 28, 0.12);
+}
+.sliderControls .iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.sliderDots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sliderDots button {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #d8d8d8;
+}
+.sliderDots button.active {
+  width: 24px;
+  background: var(--red);
+}
 .badge,
 .pill,
 .rating,
@@ -468,7 +527,7 @@ textarea:focus {
   align-items: center;
 }
 .filterBar.compact {
-  grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 .cards {
   display: grid;
@@ -870,13 +929,62 @@ hr {
   border-top: 1px solid var(--line);
   margin: 18px 0;
 }
+.siteFooter {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.2fr) minmax(180px, 0.8fr) minmax(220px, 0.8fr);
+  gap: 22px;
+  padding: 26px 6.5%;
+  background: #fff;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -12px 34px rgba(28, 28, 28, 0.05);
+}
+.footerBrand {
+  font-size: 26px;
+  font-weight: 950;
+}
+.footerBrand span {
+  color: var(--red);
+}
+.siteFooter p {
+  max-width: 520px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.footerLinks,
+.footerContact {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+}
+.footerLinks a,
+.footerContact span {
+  color: var(--text);
+  font-weight: 800;
+}
+.footerContact span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 @media (max-width: 980px) {
   .navbar {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   .navlinks {
+    display: none;
+    order: 3;
+    width: 100%;
     border-radius: 22px;
+  }
+  .navlinks.open {
+    display: flex;
+  }
+  .menuOnly {
+    display: grid;
   }
   .profileDropdown {
     left: 0;
@@ -887,7 +995,8 @@ hr {
   .editorGrid,
   .features,
   .detailHero,
-  .detailGrid {
+  .detailGrid,
+  .siteFooter {
     grid-template-columns: 1fr;
   }
   .heroVisual {
@@ -962,5 +1071,10 @@ hr {
   .heroVisual img {
     height: 300px;
     border-radius: 24px;
+  }
+  .sliderControls {
+    left: 18px;
+    right: 18px;
+    justify-content: space-between;
   }
 }

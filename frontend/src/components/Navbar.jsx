@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -17,8 +18,11 @@ import {
   Heart,
   Star,
   Truck,
+  MapPin,
+  Sparkles,
 } from "lucide-react";
 import { clearSession, getUser } from "../utils/app";
+import api from "../api/api";
 
 const roleLinks = {
   USER: [
@@ -58,6 +62,8 @@ const roleLinks = {
 export default function Navbar() {
   const navigate = useNavigate();
   const user = getUser();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const logout = () => {
     clearSession();
@@ -88,7 +94,17 @@ export default function Navbar() {
             { to: "/reviews", label: "Reviews", icon: Star },
             { to: "/orders", label: "Orders" },
             { to: "/payments", label: "Payments" },
+            { to: "/delivery", label: "Track delivery" },
+            { to: "/nearby-hotels", label: "Nearby hotels", icon: MapPin },
+            { to: "/recommendations", label: "Recommendations", icon: Sparkles },
           ];
+
+  useEffect(() => {
+    if (!user) return;
+    api.get("/api/notifications/unread-count")
+      .then(({ data }) => setUnreadCount(data.unreadCount || data.count || 0))
+      .catch(() => {});
+  }, [user]);
 
   return (
     <header className="navbar">
@@ -96,10 +112,11 @@ export default function Navbar() {
         Go<span>Eat</span>
       </Link>
 
-      <nav className="navlinks">
+      <nav className={`navlinks ${menuOpen ? "open" : ""}`}>
         {links.map(({ to, label, icon: Icon }) => (
-          <NavLink to={to} key={to}>
+          <NavLink to={to} key={to} onClick={() => setMenuOpen(false)}>
             <Icon size={17} /> {label}
+            {to === "/notifications" && unreadCount > 0 && <span className="navBadge">{unreadCount}</span>}
           </NavLink>
         ))}
       </nav>
@@ -131,7 +148,12 @@ export default function Navbar() {
             </Link>
           </>
         )}
-        <button className="iconBtn menuOnly" title="Menu">
+        <button
+          className="iconBtn menuOnly"
+          title="Menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
           <Menu size={18} />
         </button>
       </div>
