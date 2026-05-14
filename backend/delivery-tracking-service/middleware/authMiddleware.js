@@ -35,6 +35,17 @@ exports.hotelOrAdminOnly = (req, res, next) => {
   next();
 };
 
+exports.adminOnly = (req, res, next) => {
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      success: false,
+      message: "Only admin can perform this action",
+    });
+  }
+
+  next();
+};
+
 exports.deliveryOrHotelOrAdminOnly = (req, res, next) => {
   if (
     req.user.role !== "DELIVERY" &&

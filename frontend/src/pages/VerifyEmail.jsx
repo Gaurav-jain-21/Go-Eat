@@ -16,7 +16,15 @@ export default function VerifyEmail() {
       const { data } = await api.post("/api/auth/verify-email", { email, otp });
       saveSession(data.token, data.user);
       toast.success("Email verified");
-      navigate("/foods");
+      navigate(
+        data.user.role === "HOTEL"
+          ? "/hotel/home"
+          : data.user.role === "ADMIN"
+            ? "/admin/dashboard"
+            : data.user.role === "DELIVERY"
+              ? "/delivery-partner/home"
+              : "/",
+      );
     } catch (error) {
       toast.error(messageFromError(error, "Verification failed"));
     }

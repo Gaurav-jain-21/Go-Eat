@@ -4,6 +4,7 @@ const {
   getDashboardStats,
   getAllHotels,
   getAllFoods,
+  getAllUsers,
   getAllOrders,
   getPaymentByOrder,
   deleteFoodAsAdmin,
@@ -33,6 +34,8 @@ router.patch("/hotels/:hotelId/reject", protect, adminOnly, rejectHotel);
 
 router.get("/foods", protect, adminOnly, getAllFoods);
 router.delete("/foods/:foodId", protect, adminOnly, deleteFoodAsAdmin);
+
+router.get("/users", protect, adminOnly, getAllUsers);
 
 router.get("/orders", protect, adminOnly, getAllOrders);
 

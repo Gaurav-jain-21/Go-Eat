@@ -35,6 +35,7 @@ export default function Register() {
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
             <option value="USER">Customer</option>
             <option value="HOTEL">Hotel owner</option>
+            <option value="DELIVERY">Delivery partner</option>
             <option value="ADMIN">Admin</option>
           </select>
           <input placeholder="Latitude optional" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} />

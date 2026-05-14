@@ -148,6 +148,16 @@ exports.updateLiveLocation = async (req, res) => {
       });
     }
 
+    if (
+      req.user.role === "DELIVERY" &&
+      tracking.deliveryPartnerId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to update this delivery",
+      });
+    }
+
     const distanceToUserKm = calculateDistanceKm(
       Number(lat),
       Number(lng),
@@ -225,6 +235,16 @@ exports.updateDeliveryStatus = async (req, res) => {
       });
     }
 
+    if (
+      req.user.role === "DELIVERY" &&
+      tracking.deliveryPartnerId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to update this delivery",
+      });
+    }
+
     tracking.status = status;
 
     if (status === "DELIVERED") {
@@ -290,11 +310,34 @@ exports.assignDeliveryPartner = async (req, res) => {
 exports.getDeliveryPartnerOrders = async (req, res) => {
   try {
     const { deliveryPartnerId } = req.params;
+    const { scope, status } = req.query;
 
-    const trackings = await DeliveryTracking.find({
+    if (
+      req.user.role === "DELIVERY" &&
+      deliveryPartnerId.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to view this partner's orders",
+      });
+    }
+
+    const filter = {
       deliveryPartnerId,
-      status: { $nin: ["DELIVERED", "CANCELLED"] },
-    }).sort({ createdAt: -1 });
+    };
+
+    if (status) {
+      filter.status = status;
+    } else if (scope === "history") {
+      filter.status = { $in: ["DELIVERED", "CANCELLED"] };
+    } else if (scope !== "all") {
+      filter.status = { $nin: ["DELIVERED", "CANCELLED"] };
+    }
+
+    const trackings = await DeliveryTracking.find(filter).sort({
+      updatedAt: -1,
+      createdAt: -1,
+    });
 
     res.status(200).json({
       success: true,

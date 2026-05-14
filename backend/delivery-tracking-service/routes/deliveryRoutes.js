@@ -14,6 +14,7 @@ const {
 
 const {
   protect,
+  adminOnly,
   hotelOrAdminOnly,
   deliveryOrHotelOrAdminOnly,
 } = require("../middleware/authMiddleware");
@@ -31,7 +32,7 @@ router.post("/create", protect, hotelOrAdminOnly, createTracking);
 
 router.get("/my", protect, getMyTrackings);
 
-router.get("/all", protect, getAllTrackings);
+router.get("/all", protect, adminOnly, getAllTrackings);
 
 router.get("/order/:orderId", protect, getTrackingByOrderId);
 

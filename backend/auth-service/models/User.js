@@ -23,11 +23,16 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["USER", "HOTEL", "ADMIN"],
+      enum: ["USER", "HOTEL", "ADMIN", "DELIVERY"],
       default: "USER",
     },
 
     isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    isBlocked: {
       type: Boolean,
       default: false,
     },

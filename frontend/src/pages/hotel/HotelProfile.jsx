@@ -20,6 +20,7 @@ export default function HotelProfile() {
   const [hotels, setHotels] = useState([]);
   const [hotelId, setHotelId] = useState("");
   const [editing, setEditing] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [changeLocation, setChangeLocation] = useState(false);
   const [form, setForm] = useState(blankForm);
 
@@ -53,32 +54,48 @@ export default function HotelProfile() {
     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 0);
   };
 
+  const startCreate = () => {
+    setForm(blankForm);
+    setChangeLocation(true);
+    setEditing(false);
+    setCreating(true);
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 0);
+  };
+
   const pickImage = async (event) => {
     setForm({ ...form, image: await readImageFile(event.target.files?.[0]) });
   };
 
   const save = async (event) => {
     event.preventDefault();
-    if (!selectedHotel) return;
+    if (!selectedHotel && !creating) return;
 
     try {
       let locationPayload = {};
-      if (changeLocation) {
+      if (creating || changeLocation) {
         const location = await getDeviceLocation();
         locationPayload = { lat: location.lat, lng: location.lng };
       }
 
-      await api.put(`/api/hotels/${selectedHotel._id}`, {
+      const payload = {
         ...form,
         ...locationPayload,
         cuisines: form.cuisines.split(",").map((item) => item.trim()).filter(Boolean),
-      });
-      toast.success("Hotel profile updated");
+      };
+
+      if (creating) {
+        await api.post("/api/hotels", payload);
+      } else {
+        await api.put(`/api/hotels/${selectedHotel._id}`, payload);
+      }
+
+      toast.success(creating ? "Hotel profile created" : "Hotel profile updated");
       setEditing(false);
+      setCreating(false);
       setChangeLocation(false);
       load();
     } catch (error) {
-      toast.error(messageFromError(error, "Could not update hotel profile"));
+      toast.error(messageFromError(error, creating ? "Could not create hotel profile" : "Could not update hotel profile"));
     }
   };
 
@@ -118,12 +135,17 @@ export default function HotelProfile() {
             <button className="btn" onClick={startEdit}>Edit hotel profile</button>
           </div>
         </>
-      ) : <EmptyState title="No hotel profile" text="Create a hotel profile first from the create hotel page." />}
+      ) : (
+        <>
+          <EmptyState title="No hotel profile" text="Create your hotel profile here first, then you can add food." />
+          <button className="btn mt" onClick={startCreate}>Create hotel profile</button>
+        </>
+      )}
 
-      {editing && (
+      {(editing || creating) && (
         <form className="editorGrid mt" onSubmit={save}>
           <div className="panel">
-            <h2>Edit hotel profile</h2>
+            <h2>{creating ? "Create hotel profile" : "Edit hotel profile"}</h2>
             <div className="grid2">
               <input placeholder="Hotel name" value={form.hotelName} onChange={(event) => setForm({ ...form, hotelName: event.target.value })} required />
               <input placeholder="Phone" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} required />
@@ -131,13 +153,15 @@ export default function HotelProfile() {
               <input className="span2" placeholder="Cuisines comma separated" value={form.cuisines} onChange={(event) => setForm({ ...form, cuisines: event.target.value })} />
               <textarea className="span2" placeholder="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
               <input className="span2" type="file" accept="image/*" onChange={pickImage} />
-              <select className="span2" value={changeLocation ? "yes" : "no"} onChange={(event) => setChangeLocation(event.target.value === "yes")}>
-                <option value="no">Keep current hotel location</option>
-                <option value="yes">Change hotel location using this device</option>
-              </select>
+              {!creating && (
+                <select className="span2" value={changeLocation ? "yes" : "no"} onChange={(event) => setChangeLocation(event.target.value === "yes")}>
+                  <option value="no">Keep current hotel location</option>
+                  <option value="yes">Change hotel location using this device</option>
+                </select>
+              )}
             </div>
-            <p className="muted smallText mt">If you choose to change location, the browser will ask permission and save this device&apos;s current location. Coordinates are not shown here.</p>
-            <button className="btn full">Save hotel profile</button>
+            <p className="muted smallText mt">{creating ? "The browser will ask for device location and save it for the hotel. Coordinates are not shown here." : "If you choose to change location, the browser will ask permission and save this device's current location. Coordinates are not shown here."}</p>
+            <button className="btn full">{creating ? "Create hotel profile" : "Save hotel profile"}</button>
           </div>
           <aside className="previewCard">
             <img src={form.image || fallbackHotel} alt="Hotel preview" />

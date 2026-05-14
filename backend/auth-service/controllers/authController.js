@@ -224,6 +224,13 @@ exports.login = async (req, res) => {
       });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked by admin",
+      });
+    }
+
     if (!user.isEmailVerified) {
       return res.status(403).json({
         success: false,
@@ -258,6 +265,100 @@ exports.login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Login failed",
+      error: error.message,
+    });
+  }
+};
+
+// ADMIN GET ALL USERS
+exports.getAllUsers = async (req, res) => {
+  try {
+    const { role, isBlocked, search } = req.query;
+    const filter = {};
+
+    if (role) filter.role = role;
+    if (isBlocked === "true") filter.isBlocked = true;
+    if (isBlocked === "false") filter.isBlocked = false;
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const users = await User.find(filter)
+      .select("-password -emailOtp -emailOtpExpires -resetOtp -resetOtpExpires")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: users.length,
+      users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.message,
+    });
+  }
+};
+
+// ADMIN BLOCK USER
+exports.blockUserByAdmin = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { isBlocked: true },
+      { new: true },
+    ).select("-password -emailOtp -emailOtpExpires -resetOtp -resetOtpExpires");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User blocked successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to block user",
+      error: error.message,
+    });
+  }
+};
+
+// ADMIN UNBLOCK USER
+exports.unblockUserByAdmin = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { isBlocked: false },
+      { new: true },
+    ).select("-password -emailOtp -emailOtpExpires -resetOtp -resetOtpExpires");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User unblocked successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to unblock user",
       error: error.message,
     });
   }

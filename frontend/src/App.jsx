@@ -23,11 +23,13 @@ import Notifications from "./pages/Notifications";
 import Reviews from "./pages/Reviews";
 import DeliveryTracking from "./pages/DeliveryTracking";
 import Recommendations from "./pages/Recommendations";
+import DeliveryPartnerPanel from "./pages/delivery/DeliveryPartnerPanel";
 import HotelDashboard from "./pages/hotel/HotelDashboard";
 import CreateHotel from "./pages/hotel/CreateHotel";
 import AddFood from "./pages/hotel/AddFood";
 import HotelFoods from "./pages/hotel/HotelFoods";
 import HotelOrders from "./pages/hotel/HotelOrders";
+import HotelReviews from "./pages/hotel/HotelReviews";
 import HotelDelivery from "./pages/hotel/HotelDelivery";
 import HotelPayments from "./pages/hotel/HotelPayments";
 import HotelProfile from "./pages/hotel/HotelProfile";
@@ -68,11 +70,15 @@ export default function App() {
       <Route path="/reviews" element={<Reviews />} />
       <Route path="/delivery" element={<DeliveryTracking />} />
       <Route path="/recommendations" element={<Recommendations />} />
+      <Route path="/delivery-partner/home" element={<DeliveryPartnerPanel />} />
+      <Route path="/delivery-partner/orders" element={<DeliveryPartnerPanel />} />
+      <Route path="/hotel/home" element={<HotelDashboard />} />
       <Route path="/hotel/dashboard" element={<HotelDashboard />} />
       <Route path="/hotel/create" element={<CreateHotel />} />
       <Route path="/hotel/add-food" element={<AddFood />} />
       <Route path="/hotel/foods" element={<HotelFoods />} />
       <Route path="/hotel/orders" element={<HotelOrders />} />
+      <Route path="/hotel/reviews" element={<HotelReviews />} />
       <Route path="/hotel/delivery" element={<HotelDelivery />} />
       <Route path="/hotel/payments" element={<HotelPayments />} />
       <Route path="/hotel/profile" element={<HotelProfile />} />

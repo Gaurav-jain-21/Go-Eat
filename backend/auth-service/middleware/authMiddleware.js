@@ -23,3 +23,14 @@ exports.protect = (req, res, next) => {
     });
   }
 };
+
+exports.adminOnly = (req, res, next) => {
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      success: false,
+      message: "Only admin accounts allowed",
+    });
+  }
+
+  next();
+};

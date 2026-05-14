@@ -4,6 +4,7 @@ import { Clock, Heart, ShoppingCart, Star, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api/api";
 import EmptyState from "../components/EmptyState";
+import FoodCard from "../components/FoodCard";
 import { currency, fallbackFood, getUser, messageFromError } from "../utils/app";
 
 export default function FoodDetails() {
@@ -12,6 +13,7 @@ export default function FoodDetails() {
   const user = getUser();
   const [food, setFood] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [similarFoods, setSimilarFoods] = useState([]);
   const [average, setAverage] = useState({ averageRating: 0, totalReviews: 0 });
   const [review, setReview] = useState({ rating: 5, comment: "" });
 
@@ -23,20 +25,35 @@ export default function FoodDetails() {
 
   useEffect(() => {
     api.get(`/api/foods/${id}`)
-      .then(({ data }) => setFood(data.food))
+      .then(async ({ data }) => {
+        setFood(data.food);
+        const allFoods = await api.get("/api/foods");
+        const response = await api.post("/api/recommendations/similar-foods", {
+          currentFood: {
+            ...data.food,
+            foodId: data.food._id,
+          },
+          foods: (allFoods.data.foods || []).map((item) => ({
+            ...item,
+            foodId: item._id,
+          })),
+          limit: 6,
+        });
+        setSimilarFoods(response.data.foods || []);
+      })
       .catch((error) => toast.error(messageFromError(error, "Food not found")));
     loadReviews().catch(() => {});
   }, [id, loadReviews]);
 
-  const addToCart = async () => {
+  const addToCart = async (selectedFood = food) => {
     try {
       await api.post("/api/cart/add", {
-        foodId: food._id,
-        hotelId: food.hotelId,
-        foodName: food.name,
-        hotelName: food.hotelName,
-        image: food.image,
-        price: food.price,
+        foodId: selectedFood._id || selectedFood.foodId,
+        hotelId: selectedFood.hotelId,
+        foodName: selectedFood.name,
+        hotelName: selectedFood.hotelName,
+        image: selectedFood.image,
+        price: selectedFood.price,
         quantity: 1,
       });
       toast.success("Added to cart");
@@ -45,8 +62,8 @@ export default function FoodDetails() {
     }
   };
 
-  const orderNow = () => {
-    localStorage.setItem("buyNowItem", JSON.stringify(food));
+  const orderNow = (selectedFood = food) => {
+    localStorage.setItem("buyNowItem", JSON.stringify({ ...selectedFood, _id: selectedFood._id || selectedFood.foodId }));
     navigate("/checkout?mode=buy-now");
   };
 
@@ -130,6 +147,25 @@ export default function FoodDetails() {
           ) : <EmptyState title="No reviews yet" text="Be the first person to review this food." />}
         </section>
       </section>
+
+      <div className="pageHead mt">
+        <span className="badge">Recommendation service</span>
+        <h1>Similar foods</h1>
+        <p className="muted">Recommended using category, price, veg preference, and score from the recommendation microservice.</p>
+      </div>
+      {similarFoods.length ? (
+        <section className="cards">
+          {similarFoods.map((item) => (
+            <div key={item._id || item.foodId}>
+              <FoodCard food={{ ...item, _id: item._id || item.foodId }} onAdd={addToCart} />
+              <div className="cardActions">
+                <button className="btn small" onClick={() => addToCart(item)}><ShoppingCart size={15} /> Add cart</button>
+                <button className="btn ghost small" onClick={() => orderNow(item)}><Zap size={15} /> Order now</button>
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : <EmptyState title="No similar foods yet" text="Similar food recommendations will appear when more foods exist." />}
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../api/api";
 import FoodCard from "../../components/FoodCard";
@@ -137,12 +138,20 @@ export default function HotelFoods() {
           <h1>Hotel&apos;s Food</h1>
           <p className="muted">Add, update, delete, and control availability from one menu panel.</p>
         </div>
-        <button className="btn" onClick={() => { resetForm(); setFormOpen((value) => !value); }}>
+        <button className="btn" disabled={!hotels.length} onClick={() => { resetForm(); setFormOpen((value) => !value); }}>
           {formOpen ? "Close form" : "Add food"}
         </button>
       </div>
 
-      {formOpen && (
+      {!hotels.length && (
+        <section className="panel">
+          <h2>Create hotel profile first</h2>
+          <p className="muted">Food items must belong to one of your hotels. Create your hotel profile, then come back here to add food.</p>
+          <Link className="btn mt" to="/hotel/profile">Go to hotel profile</Link>
+        </section>
+      )}
+
+      {formOpen && hotels.length > 0 && (
         <form className="editorGrid" onSubmit={submit}>
           <div className="panel">
             <h2>{editingId ? "Update food" : "Add food"}</h2>
@@ -185,7 +194,7 @@ export default function HotelFoods() {
             </div>
           ))}
         </section>
-      ) : <EmptyState title="No foods yet" text="Use Add food to start building your hotel menu." />}
+      ) : hotels.length > 0 ? <EmptyState title="No foods yet" text="Use Add food to start building your hotel menu." /> : null}
     </main>
   );
 }

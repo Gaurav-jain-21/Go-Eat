@@ -21,7 +21,15 @@ export default function Login() {
           .catch(() => {});
       }
       toast.success("Welcome back");
-      navigate(data.user.role === "HOTEL" ? "/" : data.user.role === "ADMIN" ? "/admin/dashboard" : "/");
+      navigate(
+        data.user.role === "HOTEL"
+          ? "/hotel/home"
+          : data.user.role === "ADMIN"
+            ? "/admin/dashboard"
+            : data.user.role === "DELIVERY"
+              ? "/delivery-partner/home"
+              : "/",
+      );
     } catch (error) {
       toast.error(messageFromError(error, "Login failed"));
     } finally {

@@ -9,9 +9,12 @@ const {
   resetPassword,
   me,
   updateLocation,
+  getAllUsers,
+  blockUserByAdmin,
+  unblockUserByAdmin,
 } = require("../controllers/authController");
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -33,5 +36,14 @@ router.post("/reset-password", resetPassword);
 
 router.get("/me", protect, me);
 router.put("/location", protect, updateLocation);
+
+router.get("/admin/users", protect, adminOnly, getAllUsers);
+router.patch("/admin/users/:userId/block", protect, adminOnly, blockUserByAdmin);
+router.patch(
+  "/admin/users/:userId/unblock",
+  protect,
+  adminOnly,
+  unblockUserByAdmin,
+);
 
 module.exports = router;

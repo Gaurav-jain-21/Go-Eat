@@ -29,12 +29,18 @@ const roleLinks = {
     { to: "/cart", label: "Cart", icon: ShoppingCart },
   ],
   HOTEL: [
-    { to: "/", label: "Home", icon: Home },
+    { to: "/hotel/home", label: "Home", icon: Home },
     { to: "/hotel/foods", label: "Hotel's Food", icon: Utensils },
     { to: "/hotel/orders", label: "Hotel's Orders", icon: ClipboardList },
+    { to: "/hotel/reviews", label: "Reviews", icon: Star },
     { to: "/hotel/delivery", label: "Delivery", icon: Truck },
     { to: "/hotel/payments", label: "Payments", icon: CreditCard },
     { to: "/notifications", label: "Notification", icon: Bell },
+  ],
+  DELIVERY: [
+    { to: "/delivery-partner/home", label: "Home", icon: Home },
+    { to: "/delivery-partner/orders", label: "My Orders", icon: Truck },
+    { to: "/notifications", label: "Notifications", icon: Bell },
   ],
   ADMIN: [
     { to: "/", label: "Home", icon: Home },
@@ -70,6 +76,11 @@ export default function Navbar() {
             { to: "/hotel/profile", label: "Hotel profile" },
             { to: "/hotel/past-orders", label: "Past orders" },
           ]
+        : role === "DELIVERY"
+          ? [
+              { to: "/delivery-partner/home", label: "Delivery profile" },
+              { to: "/delivery-partner/orders", label: "Assigned orders" },
+            ]
         : [
             { to: "/profile", label: "Profile settings" },
             { to: "/favorites", label: "Favorites", icon: Heart },

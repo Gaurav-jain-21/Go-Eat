@@ -170,26 +170,41 @@ exports.deleteFoodAsAdmin = async (req, res) => {
   }
 };
 
+// GET ALL USERS
+exports.getAllUsers = async (req, res) => {
+  try {
+    const response = await axios.get(`${AUTH_SERVICE}/api/auth/admin/users`, {
+      ...getAuthHeader(req),
+      params: req.query,
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.response?.data || error.message,
+    });
+  }
+};
+
 // BLOCK USER
 exports.blockUser = async (req, res) => {
   try {
-    /*
-      Your auth-service User model currently does not have isBlocked.
-      Add isBlocked later in auth-service if you want real block/login prevention.
-    */
+    const response = await axios.patch(
+      `${AUTH_SERVICE}/api/auth/admin/users/${req.params.userId}/block`,
+      {},
+      getAuthHeader(req),
+    );
 
     await createLog(req.user.userId, "BLOCK_USER", "USER", req.params.userId);
 
-    res.status(200).json({
-      success: true,
-      message:
-        "User block action logged. Add isBlocked field in auth-service for real blocking.",
-    });
+    res.status(200).json(response.data);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to block user",
-      error: error.message,
+      error: error.response?.data || error.message,
     });
   }
 };
@@ -197,18 +212,20 @@ exports.blockUser = async (req, res) => {
 // UNBLOCK USER
 exports.unblockUser = async (req, res) => {
   try {
+    const response = await axios.patch(
+      `${AUTH_SERVICE}/api/auth/admin/users/${req.params.userId}/unblock`,
+      {},
+      getAuthHeader(req),
+    );
+
     await createLog(req.user.userId, "UNBLOCK_USER", "USER", req.params.userId);
 
-    res.status(200).json({
-      success: true,
-      message:
-        "User unblock action logged. Add isBlocked field in auth-service for real unblocking.",
-    });
+    res.status(200).json(response.data);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to unblock user",
-      error: error.message,
+      error: error.response?.data || error.message,
     });
   }
 };
