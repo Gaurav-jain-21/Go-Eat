@@ -205,3 +205,64 @@ exports.deleteHotel = async (req, res) => {
     });
   }
 };
+
+// APPROVE HOTEL BY ADMIN
+exports.approveHotelByAdmin = async (req, res) => {
+  try {
+    const hotel = await Hotel.findByIdAndUpdate(
+      req.params.id,
+      {
+        approvalStatus: "APPROVED",
+        isApproved: true,
+      },
+      { new: true },
+    );
+
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        message: "Hotel not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Hotel approved successfully",
+      hotel,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to approve hotel",
+      error: error.message,
+    });
+  }
+};
+
+// REJECT HOTEL BY ADMIN
+exports.rejectHotelByAdmin = async (req, res) => {
+  try {
+    const hotel = await Hotel.findById(req.params.id);
+
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        message: "Hotel not found",
+      });
+    }
+
+    await hotel.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Hotel rejected and deleted successfully",
+      hotelId: req.params.id,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to reject hotel",
+      error: error.message,
+    });
+  }
+};

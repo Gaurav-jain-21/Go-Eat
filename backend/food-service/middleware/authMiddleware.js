@@ -34,3 +34,14 @@ exports.hotelOnly = (req, res, next) => {
 
   next();
 };
+
+exports.adminOnly = (req, res, next) => {
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      success: false,
+      message: "Only admin accounts can do this action",
+    });
+  }
+
+  next();
+};

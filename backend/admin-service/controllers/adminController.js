@@ -148,29 +148,24 @@ exports.getPaymentByOrder = async (req, res) => {
 // DELETE FOOD AS ADMIN
 exports.deleteFoodAsAdmin = async (req, res) => {
   try {
-    /*
-      Your current food-service allows only HOTEL owner to delete.
-      So this admin endpoint currently creates admin log only.
-      Later we will add admin delete route inside food-service.
-    */
+    const response = await axios.delete(
+      `${FOOD_SERVICE}/api/foods/admin/${req.params.foodId}`,
+      getAuthHeader(req),
+    );
 
     await createLog(
       req.user.userId,
-      "ADMIN_REQUESTED_DELETE_FOOD",
+      "DELETE_FOOD",
       "FOOD",
       req.params.foodId,
     );
 
-    res.status(200).json({
-      success: true,
-      message:
-        "Admin delete food request logged. Add admin delete route in food-service later.",
-    });
+    res.status(200).json(response.data);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to delete food",
-      error: error.message,
+      error: error.response?.data || error.message,
     });
   }
 };
@@ -221,23 +216,26 @@ exports.unblockUser = async (req, res) => {
 // APPROVE HOTEL
 exports.approveHotel = async (req, res) => {
   try {
+    const response = await axios.patch(
+      `${HOTEL_SERVICE}/api/hotels/admin/${req.params.hotelId}/approve`,
+      {},
+      getAuthHeader(req),
+    );
+
     await createLog(
       req.user.userId,
       "APPROVE_HOTEL",
       "HOTEL",
       req.params.hotelId,
+      { approvalStatus: "APPROVED" },
     );
 
-    res.status(200).json({
-      success: true,
-      message:
-        "Hotel approval action logged. Add approval field in hotel-service later.",
-    });
+    res.status(200).json(response.data);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to approve hotel",
-      error: error.message,
+      error: error.response?.data || error.message,
     });
   }
 };
@@ -245,23 +243,30 @@ exports.approveHotel = async (req, res) => {
 // REJECT HOTEL
 exports.rejectHotel = async (req, res) => {
   try {
+    await axios.delete(
+      `${FOOD_SERVICE}/api/foods/admin/hotel/${req.params.hotelId}`,
+      getAuthHeader(req),
+    );
+
+    const response = await axios.delete(
+      `${HOTEL_SERVICE}/api/hotels/admin/${req.params.hotelId}/reject`,
+      getAuthHeader(req),
+    );
+
     await createLog(
       req.user.userId,
       "REJECT_HOTEL",
       "HOTEL",
       req.params.hotelId,
+      { deleted: true },
     );
 
-    res.status(200).json({
-      success: true,
-      message:
-        "Hotel rejection action logged. Add approval field in hotel-service later.",
-    });
+    res.status(200).json(response.data);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to reject hotel",
-      error: error.message,
+      error: error.response?.data || error.message,
     });
   }
 };

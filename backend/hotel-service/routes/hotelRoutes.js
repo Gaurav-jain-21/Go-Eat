@@ -7,9 +7,11 @@ const {
   getNearbyHotels,
   updateHotel,
   deleteHotel,
+  approveHotelByAdmin,
+  rejectHotelByAdmin,
 } = require("../controllers/hotelController");
 
-const { protect, hotelOnly } = require("../middleware/authMiddleware");
+const { protect, hotelOnly, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -25,6 +27,10 @@ router.post("/", protect, hotelOnly, createHotel);
 router.get("/", getAllHotels);
 
 router.get("/nearby", getNearbyHotels);
+
+router.patch("/admin/:id/approve", protect, adminOnly, approveHotelByAdmin);
+
+router.delete("/admin/:id/reject", protect, adminOnly, rejectHotelByAdmin);
 
 router.get("/:id", getHotelById);
 

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../api/api";
 import EmptyState from "../../components/EmptyState";
-import { currency, getUser, messageFromError } from "../../utils/app";
+import { currency, getDeviceLocation, getUser, messageFromError } from "../../utils/app";
 import { notifyUserOrderStatus } from "../../utils/notifications";
 
 const statuses = ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+const completedStatuses = ["DELIVERED", "CANCELLED", "REFUNDED"];
 
 export default function HotelOrders() {
   const user = getUser();
@@ -18,8 +19,6 @@ export default function HotelOrders() {
     deliveryPartnerName: "",
     deliveryPartnerPhone: "",
     estimatedMinutes: 30,
-    lat: "",
-    lng: "",
     status: "ON_THE_WAY",
   });
 
@@ -33,7 +32,9 @@ export default function HotelOrders() {
 
   useEffect(() => {
     if (!hotelId) return;
-    api.get(`/api/orders/hotel/${hotelId}`).then(({ data }) => setOrders(data.orders || [])).catch((error) => toast.error(messageFromError(error, "Could not load hotel orders")));
+    api.get(`/api/orders/hotel/${hotelId}`)
+      .then(({ data }) => setOrders(data.orders || []))
+      .catch((error) => toast.error(messageFromError(error, "Could not load hotel orders")));
   }, [hotelId]);
 
   const update = async (order, orderStatus) => {
@@ -81,12 +82,13 @@ export default function HotelOrders() {
   const updateDelivery = async (order, action) => {
     try {
       if (action === "location") {
+        const location = await getDeviceLocation();
         await api.patch(`/api/delivery/order/${order._id}/location`, {
-          lat: trackingForm.lat,
-          lng: trackingForm.lng,
+          lat: location.lat,
+          lng: location.lng,
           estimatedMinutes: trackingForm.estimatedMinutes,
         });
-        toast.success("Live location updated");
+        toast.success("Live location updated from this device");
         return;
       }
 
@@ -99,6 +101,34 @@ export default function HotelOrders() {
     }
   };
 
+  const activeOrders = orders.filter((order) => !completedStatuses.includes(order.orderStatus));
+  const completedOrders = orders.filter((order) => completedStatuses.includes(order.orderStatus));
+
+  const renderOrder = (order, completed = false) => (
+    <article className="panel" key={order._id}>
+      <div className="between wrap">
+        <h2>Order #{order._id.slice(-6)}</h2>
+        <span className="pill orange">{order.orderStatus}</span>
+        <strong>{currency(order.finalAmount)}</strong>
+      </div>
+      <div className="miniList">
+        {order.items.filter((item) => item.hotelId === hotelId).map((item) => <span key={item._id}>{item.foodName} x {item.quantity}</span>)}
+      </div>
+      {!completed && (
+        <>
+          <select value={order.orderStatus} onChange={(e) => update(order, e.target.value)}>
+            {statuses.map((status) => <option key={status}>{status}</option>)}
+          </select>
+          <div className="row wrap mt">
+            <button className="btn small" onClick={() => createTracking(order)}>Create tracking</button>
+            <button className="btn ghost small" onClick={() => updateDelivery(order, "location")}>Update device location</button>
+            <button className="btn ghost small" onClick={() => updateDelivery(order, "status")}>Update delivery status</button>
+          </div>
+        </>
+      )}
+    </article>
+  );
+
   return (
     <main className="page">
       <div className="pageHead"><span className="badge">Kitchen orders</span><h1>Hotel orders</h1></div>
@@ -110,14 +140,17 @@ export default function HotelOrders() {
           <input placeholder="Partner name" value={trackingForm.deliveryPartnerName} onChange={(e) => setTrackingForm({ ...trackingForm, deliveryPartnerName: e.target.value })} />
           <input placeholder="Partner phone" value={trackingForm.deliveryPartnerPhone} onChange={(e) => setTrackingForm({ ...trackingForm, deliveryPartnerPhone: e.target.value })} />
           <input placeholder="ETA minutes" value={trackingForm.estimatedMinutes} onChange={(e) => setTrackingForm({ ...trackingForm, estimatedMinutes: e.target.value })} />
-          <input placeholder="Current latitude" value={trackingForm.lat} onChange={(e) => setTrackingForm({ ...trackingForm, lat: e.target.value })} />
-          <input placeholder="Current longitude" value={trackingForm.lng} onChange={(e) => setTrackingForm({ ...trackingForm, lng: e.target.value })} />
           <select value={trackingForm.status} onChange={(e) => setTrackingForm({ ...trackingForm, status: e.target.value })}>
             {["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "NEAR_USER", "DELIVERED", "CANCELLED"].map((status) => <option key={status}>{status}</option>)}
           </select>
         </div>
+        <p className="muted smallText mt">Live location is taken automatically from this device when you click Update device location.</p>
       </section>
-      {orders.length ? <section className="stack">{orders.map((order) => <article className="panel" key={order._id}><div className="between wrap"><h2>Order #{order._id.slice(-6)}</h2><strong>{currency(order.finalAmount)}</strong></div><div className="miniList">{order.items.filter((item) => item.hotelId === hotelId).map((item) => <span key={item._id}>{item.foodName} x {item.quantity}</span>)}</div><select value={order.orderStatus} onChange={(e) => update(order, e.target.value)}>{statuses.map((status) => <option key={status}>{status}</option>)}</select><div className="row wrap mt"><button className="btn small" onClick={() => createTracking(order)}>Create tracking</button><button className="btn ghost small" onClick={() => updateDelivery(order, "location")}>Update location</button><button className="btn ghost small" onClick={() => updateDelivery(order, "status")}>Update delivery status</button></div></article>)}</section> : <EmptyState title="No hotel orders" text="Orders for the selected hotel appear here." />}
+      <div className="pageHead mt"><span className="badge">Active</span><h1>Current hotel orders</h1></div>
+      {activeOrders.length ? <section className="stack">{activeOrders.map((order) => renderOrder(order))}</section> : <EmptyState title="No active hotel orders" text="New, preparing, and out-for-delivery orders appear here." />}
+
+      <div className="pageHead mt"><span className="badge">History</span><h1>Delivered and cancelled orders</h1></div>
+      {completedOrders.length ? <section className="stack">{completedOrders.map((order) => renderOrder(order, true))}</section> : <EmptyState title="No completed orders" text="Delivered, cancelled, and refunded orders appear here." />}
     </main>
   );
 }

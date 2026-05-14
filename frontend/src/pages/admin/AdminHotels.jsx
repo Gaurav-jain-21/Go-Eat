@@ -19,7 +19,7 @@ export default function AdminHotels() {
   const action = async (hotel, kind) => {
     try {
       await api.patch(`/api/admin/hotels/${hotel._id}/${kind}`);
-      toast.success(`Hotel ${kind}d`);
+      toast.success(kind === "approve" ? "Hotel approved in database" : "Hotel rejected and deleted");
       load();
     } catch (error) {
       toast.error(messageFromError(error, "Could not update hotel"));
@@ -27,8 +27,8 @@ export default function AdminHotels() {
   };
   return (
     <main className="page">
-      <div className="pageHead"><span className="badge">Admin</span><h1>Hotel approvals</h1></div>
-      {hotels.length ? <section className="cards">{hotels.map((hotel) => <div key={hotel._id}><HotelCard hotel={hotel} /><div className="cardActions"><button className="btn small" onClick={() => action(hotel, "approve")}>Approve</button><button className="dangerBtn small" onClick={() => action(hotel, "reject")}>Reject</button></div></div>)}</section> : <EmptyState title="No hotels" />}
+      <div className="pageHead"><span className="badge">Admin</span><h1>Hotel approvals</h1><p className="muted">Approve writes approval status to MongoDB. Reject deletes the hotel from MongoDB.</p></div>
+      {hotels.length ? <section className="cards">{hotels.map((hotel) => <div key={hotel._id}><HotelCard hotel={hotel} /><div className="miniList"><span>{hotel.approvalStatus || "PENDING"}</span><span>{hotel.isApproved ? "Approved" : "Not approved"}</span></div><div className="cardActions"><button className="btn small" onClick={() => action(hotel, "approve")}>Approve</button><button className="dangerBtn small" onClick={() => action(hotel, "reject")}>Reject & delete</button></div></div>)}</section> : <EmptyState title="No hotels" />}
     </main>
   );
 }

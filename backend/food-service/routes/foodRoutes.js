@@ -9,9 +9,11 @@ const {
   updateFood,
   deleteFood,
   toggleAvailability,
+  deleteFoodAsAdmin,
+  deleteFoodsByHotelAsAdmin,
 } = require("../controllers/foodController");
 
-const { protect, hotelOnly } = require("../middleware/authMiddleware");
+const { protect, hotelOnly, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -27,6 +29,10 @@ router.post("/", protect, hotelOnly, addFood);
 router.get("/", getAllFoods);
 
 router.get("/my-foods", protect, hotelOnly, getMyFoods);
+
+router.delete("/admin/hotel/:hotelId", protect, adminOnly, deleteFoodsByHotelAsAdmin);
+
+router.delete("/admin/:id", protect, adminOnly, deleteFoodAsAdmin);
 
 router.get("/hotel/:hotelId", getFoodsByHotel);
 

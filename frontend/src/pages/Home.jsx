@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, Bike, Clock, Sparkles, Utensils } from "lucide-react";
+import { Bike, Clock, Sparkles, Utensils } from "lucide-react";
 import { getUser } from "../utils/app";
 import HotelDashboard from "./hotel/HotelDashboard";
 

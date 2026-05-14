@@ -261,3 +261,52 @@ exports.toggleAvailability = async (req, res) => {
     });
   }
 };
+
+// DELETE FOOD BY ADMIN
+exports.deleteFoodAsAdmin = async (req, res) => {
+  try {
+    const food = await Food.findById(req.params.id);
+
+    if (!food) {
+      return res.status(404).json({
+        success: false,
+        message: "Food not found",
+      });
+    }
+
+    await food.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Food deleted by admin successfully",
+      foodId: req.params.id,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete food as admin",
+      error: error.message,
+    });
+  }
+};
+
+// DELETE HOTEL FOODS BY ADMIN
+exports.deleteFoodsByHotelAsAdmin = async (req, res) => {
+  try {
+    const result = await Food.deleteMany({
+      hotelId: req.params.hotelId,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Hotel foods deleted by admin successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete hotel foods as admin",
+      error: error.message,
+    });
+  }
+};
