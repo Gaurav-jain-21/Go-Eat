@@ -180,6 +180,32 @@ exports.getMyPayments = async (req, res) => {
   }
 };
 
+// ADMIN GET ALL PAYMENTS
+exports.getAllPayments = async (req, res) => {
+  try {
+    const { status, userId, orderId } = req.query;
+    const filter = {};
+
+    if (status) filter.status = status;
+    if (userId) filter.userId = userId;
+    if (orderId) filter.orderId = orderId;
+
+    const payments = await Payment.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: payments.length,
+      payments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch all payments",
+      error: error.message,
+    });
+  }
+};
+
 // REFUND PAYMENT
 exports.refundPayment = async (req, res) => {
   try {

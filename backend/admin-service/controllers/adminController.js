@@ -42,7 +42,7 @@ exports.getDashboardStats = async (req, res) => {
         axios.get(`${FOOD_SERVICE}/api/foods`),
         axios.get(`${ORDER_SERVICE}/api/orders/all`, getAuthHeader(req)),
         axios.get(
-          `${PAYMENT_SERVICE}/api/payments/my-payments`,
+          `${PAYMENT_SERVICE}/api/payments/all`,
           getAuthHeader(req),
         ),
       ]);
