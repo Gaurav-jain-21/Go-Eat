@@ -21,6 +21,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [profileForm, setProfileForm] = useState({ name: "", email: "", phone: "", profileImage: "" });
   const [address, setAddress] = useState(emptyAddress);
+  const [editingAddressId, setEditingAddressId] = useState("");
   const [preferences, setPreferences] = useState({ vegOnly: false, favoriteCuisines: "", spiceLevel: "Medium" });
 
   const load = async () => {
@@ -43,6 +44,7 @@ export default function Profile() {
         favoriteCuisines: (profileData.profile?.preferences?.favoriteCuisines || []).join(", "),
         spiceLevel: profileData.profile?.preferences?.spiceLevel || "Medium",
       });
+
     } catch (error) {
       toast.error(messageFromError(error, "Could not load profile"));
     }
@@ -72,16 +74,40 @@ export default function Profile() {
     }
   };
 
-  const addAddress = async (event) => {
+  const saveAddress = async (event) => {
     event.preventDefault();
     try {
-      const { data } = await api.post("/api/users/address", address);
+      const { data } = editingAddressId
+        ? await api.put(`/api/users/address/${editingAddressId}`, address)
+        : await api.post("/api/users/address", address);
       setProfile(data.profile);
       setAddress(emptyAddress);
-      toast.success("Address added");
+      setEditingAddressId("");
+      toast.success(editingAddressId ? "Address updated" : "Address added");
     } catch (error) {
-      toast.error(messageFromError(error, "Could not add address"));
+      toast.error(messageFromError(error, editingAddressId ? "Could not update address" : "Could not add address"));
     }
+  };
+
+  const editAddress = (item) => {
+    setEditingAddressId(item._id);
+    setAddress({
+      label: item.label || "",
+      fullAddress: item.fullAddress || "",
+      city: item.city || "",
+      state: item.state || "",
+      pincode: item.pincode || "",
+      phone: item.phone || "",
+      lat: item.location?.coordinates?.[1] || "",
+      lng: item.location?.coordinates?.[0] || "",
+      isDefault: Boolean(item.isDefault),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelAddressEdit = () => {
+    setEditingAddressId("");
+    setAddress(emptyAddress);
   };
 
   const setDefaultAddress = async (addressId) => {
@@ -140,10 +166,13 @@ export default function Profile() {
             <button className="btn full">Save profile</button>
           </form>
 
-          <form className="panel" onSubmit={addAddress}>
+          <form className="panel" onSubmit={saveAddress}>
             <div className="between wrap">
-              <h2>Add delivery address</h2>
-              <button type="button" className="btn ghost small" onClick={useCurrentLocation}>Use device location</button>
+              <h2>{editingAddressId ? "Edit delivery address" : "Add delivery address"}</h2>
+              <div className="row wrap">
+                <button type="button" className="btn ghost small" onClick={useCurrentLocation}>Use device location</button>
+                {editingAddressId && <button type="button" className="dangerBtn small" onClick={cancelAddressEdit}>Cancel edit</button>}
+              </div>
             </div>
             <div className="grid2">
               <input placeholder="Label, e.g. Home" value={address.label} onChange={(event) => setAddress({ ...address, label: event.target.value })} />
@@ -157,7 +186,7 @@ export default function Profile() {
                 <option value="yes">Make default</option>
               </select>
             </div>
-            <button className="btn full">Add address</button>
+            <button className="btn full">{editingAddressId ? "Update address" : "Add address"}</button>
           </form>
         </section>
 
@@ -190,6 +219,7 @@ export default function Profile() {
                     <p>{item.fullAddress}</p>
                     <p className="muted">{item.city} {item.pincode}</p>
                     <div className="row wrap mt">
+                      <button className="btn small" onClick={() => editAddress(item)}>Edit</button>
                       <button className="btn ghost small" onClick={() => setDefaultAddress(item._id)}>Set default</button>
                       <button className="dangerBtn small" onClick={() => deleteAddress(item._id)}>Delete</button>
                     </div>
@@ -198,6 +228,7 @@ export default function Profile() {
               </div>
             ) : <EmptyState title="No addresses" text="Add an address to speed up checkout." />}
           </section>
+
         </aside>
       </div>
     </main>

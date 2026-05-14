@@ -14,6 +14,7 @@ import {
   Users,
   User,
   Utensils,
+  Heart,
 } from "lucide-react";
 import { clearSession, getUser } from "../utils/app";
 
@@ -66,6 +67,7 @@ export default function Navbar() {
           ]
         : [
             { to: "/profile", label: "Profile settings" },
+            { to: "/favorites", label: "Favorites", icon: Heart },
             { to: "/orders", label: "Orders" },
             { to: "/payments", label: "Payments" },
           ];

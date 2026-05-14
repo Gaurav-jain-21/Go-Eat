@@ -17,6 +17,7 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Payments from "./pages/Payments";
 import Profile from "./pages/Profile";
+import Favorites from "./pages/Favorites";
 import AIChat from "./pages/AIChat";
 import Notifications from "./pages/Notifications";
 import Reviews from "./pages/Reviews";
@@ -58,6 +59,7 @@ export default function App() {
       <Route path="/orders" element={<Orders />} />
       <Route path="/payments" element={<Payments />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/favorites" element={<Favorites />} />
       <Route path="/ai" element={<AIChat />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/reviews" element={<Reviews />} />
