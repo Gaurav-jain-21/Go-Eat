@@ -1,395 +1,208 @@
 # GoEat - AI Powered Food Delivery Platform
 
-```txt
-Microservices + MERN + RAG AI + Payments + Notifications + Geo-location
-```
+GoEat is a microservices-based food delivery platform with a React frontend, Node.js backend services, MongoDB Atlas storage, and a FastAPI AI service for chat, RAG, and recommendations.
 
-## Project Overview
+## Features
 
-GoEat is a modern AI-powered food delivery platform built using a complete microservices architecture.
+* JWT authentication and role-based access for users, hotels, and admins
+* Hotel profile creation and food management
+* Food browsing, cart, orders, payments, reviews, notifications, and delivery tracking
+* API gateway for routing frontend requests to backend services
+* AI chat, RAG support, and food recommendation endpoints
+* MongoDB Atlas support through a shared root `.env`
 
-The platform allows users to:
+## Tech Stack
 
-* discover nearby restaurants
-* order food online
-* make secure payments
-* receive real-time notifications
-* interact with an AI chatbot
-* get AI-powered food recommendations
+* Frontend: React, Vite, Tailwind CSS, Axios, React Router
+* Backend: Node.js, Express, MongoDB, Mongoose, JWT
+* AI service: FastAPI, ChromaDB, Sentence Transformers, Groq-compatible OpenAI client
+* Deployment/runtime: Docker, Docker Compose, Nginx
 
-The system is designed with scalability, modularity, and production-level backend architecture in mind.
-
----
-
-# Features
-
-## Authentication & Authorization
-
-* JWT Authentication
-* Role-Based Access Control
-* Email Verification
-* Login/Register
-* Protected Routes
-* Token Middleware
-* Admin/User/Hotel Roles
-
----
-
-## User Features
-
-* Register/Login
-* Browse Nearby Hotels
-* Search Foods
-* Add To Cart
-* Place Orders
-* Track Orders
-* Payment Integration
-* Notifications
-* Profile Management
-* AI Chatbot
-
----
-
-## Hotel Features
-
-* Hotel Registration
-* Add/Edit/Delete Foods
-* Manage Orders
-* Update Order Status
-* Dashboard Management
-
----
-
-## Admin Features
-
-* Manage Users
-* Manage Hotels
-* Manage Orders
-* Manage Payments
-* System Monitoring
-
----
-
-# AI Features
-
-* RAG-based AI Chatbot
-* AI Food Recommendation System
-* Vector Search using ChromaDB
-* Embedding-based Retrieval
-* Groq LLM Integration
-* Semantic Food Search
-
----
-
-# Payments
-
-* Razorpay Integration
-* PayPal Integration
-* Refund Support
-* Payment Verification
-* Payment Tracking
-
----
-
-# Notifications
-
-* Real-time Notifications
-* Email Notifications
-* Socket.io Integration
-* Order Status Updates
-* Refund Notifications
-
----
-
-# Geo Location Features
-
-* Nearby Hotels
-* Radius-based Search
-* Location Detection
-* Delivery Availability Check
-
----
-
-# Microservices Architecture
+## Project Structure
 
 ```txt
-Frontend (React + Vite)
-        │
-        ▼
-API Gateway (Port 5000)
-        │
- ┌───────────────────────────────┐
- │                               │
- ▼                               ▼
-
-Auth Service           : 4001
-User Service           : 4002
-Hotel Service          : 4003
-Location Service       : 4004
-Order Service          : 4005
-Payment Service        : 4006
-Notification Service   : 4007
-RAG AI Service         : 4008
+Go-Eat/
+|-- frontend/
+|   |-- Dockerfile
+|   |-- nginx.conf
+|   `-- src/
+|-- backend/
+|   |-- Dockerfile
+|   |-- api-gateway/
+|   |-- auth-service/
+|   |-- user-service/
+|   |-- hotel-service/
+|   |-- food-service/
+|   |-- cart-service/
+|   |-- order-service/
+|   |-- payment-service/
+|   |-- notification-service/
+|   |-- admin-service/
+|   |-- review-rating-service/
+|   |-- delivery-tracking-service/
+|   |-- recommendation-service/
+|   `-- ai-service/
+|-- docker-compose.yml
+|-- .env.example
+`-- .dockerignore
 ```
 
----
+## Services
 
-# Tech Stack
-
-## Frontend
-
-* React
-* Vite
-* Tailwind CSS
-* Axios
-* React Router DOM
-* Framer Motion
-* Socket.io Client
-
----
-
-## Backend
-
-* Node.js
-* Express.js
-* MongoDB
-* Mongoose
-* JWT
-* Socket.io
-* API Gateway
-
----
-
-## AI Stack
-
-* FastAPI
-* ChromaDB
-* Sentence Transformers
-* Groq LLM
-* RAG Architecture
-
----
-
-## Payments
-
-* Razorpay
-* PayPal
-
----
-
-# Folder Structure
+Frontend requests go to the API gateway at `http://localhost:5000`.
 
 ```txt
-GoEat/
-│
-├── goeat-client/
-│
-├── services/
-│   ├── auth-service/
-│   ├── user-service/
-│   ├── hotel-service/
-│   ├── location-service/
-│   ├── order-service/
-│   ├── payment-service/
-│   ├── notification-service/
-│   ├── rag-ai-service/
-│   └── api-gateway/
-│
-└── README.md
+frontend                       host 5173 -> container 80
+api-gateway                    5000
+auth-service                   5001
+user-service                   5002
+hotel-service                  5003
+food-service                   5004
+cart-service                   5005
+order-service                  5006
+payment-service                5007
+ai-service                     8000
+notification-service           5009
+admin-service                  5010
+review-rating-service          5011
+delivery-tracking-service      5012
+recommendation-service         5013
 ```
 
----
+## Environment Setup
 
-# Installation Guide
+Create a root `.env` from the example:
 
-# 1. Clone Repository
-
-```bash
-git clone https://github.com/your-username/goeat.git
+```powershell
+Copy-Item .env.example .env
 ```
 
-```bash
-cd goeat
-```
-
----
-
-# 2. Install Frontend
-
-```bash
-cd goeat-client
-npm install
-npm run dev
-```
-
-Frontend runs on:
-
-```txt
-http://localhost:5173
-```
-
----
-
-# 3. Setup Backend Services
-
-Install dependencies inside every service:
-
-Example:
-
-```bash
-cd services/auth-service
-npm install
-npm run dev
-```
-
-Do the same for:
-
-```txt
-user-service
-hotel-service
-location-service
-order-service
-payment-service
-notification-service
-api-gateway
-```
-
----
-
-# 4. Setup AI Service
-
-```bash
-cd services/rag-ai-service
-```
-
-Create virtual environment:
-
-```bash
-python -m venv venv
-```
-
-Activate:
-
-## Windows
-
-```bash
-venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run:
-
-```bash
-python main.py
-```
-
----
-
-# Environment Variables
-
-## Frontend `.env`
+Update at least these values:
 
 ```env
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/goeat?retryWrites=true&w=majority
+JWT_SECRET=change_this_to_a_long_random_secret
 VITE_API_URL=http://localhost:5000
 ```
 
----
-
-## Backend Example `.env`
+Optional integrations:
 
 ```env
-PORT=4001
-MONGO_URI=your_mongodb_connection
-JWT_SECRET=your_secret_key
+EMAIL_USER=
+EMAIL_PASS=
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
----
+For MongoDB Atlas, make sure your current IP is allowed in Atlas Network Access.
 
-# API Gateway
+## Docker Setup
 
-All frontend requests go through:
+Start Docker Desktop first, using Linux containers.
+
+Build and run everything:
+
+```powershell
+$env:COMPOSE_PARALLEL_LIMIT=1
+docker compose up --build
+```
+
+Or run in the background:
+
+```powershell
+$env:COMPOSE_PARALLEL_LIMIT=1
+docker compose up -d --build
+```
+
+Open:
 
 ```txt
-http://localhost:5000
+Frontend:    http://localhost:5173
+API gateway: http://localhost:5000
 ```
 
----
+Check container status:
 
-# Running Order
-
-Start services in this order:
-
-```txt
-auth-service
-user-service
-hotel-service
-location-service
-order-service
-payment-service
-notification-service
-rag-ai-service
-api-gateway
-frontend
+```powershell
+docker compose ps
+docker compose ps -a
 ```
 
----
+View logs:
 
-# API Examples
+```powershell
+docker compose logs --tail=100 api-gateway
+docker compose logs --tail=100 hotel-service
+docker compose logs --tail=100 ai-service
+```
 
-## Register User
+Stop services:
+
+```powershell
+docker compose down
+```
+
+## Rebuilding Individual Services
+
+If npm fails during parallel Docker builds, rebuild one service at a time:
+
+```powershell
+$env:COMPOSE_PARALLEL_LIMIT=1
+docker compose build --no-cache cart-service
+docker compose up -d cart-service
+docker compose logs --tail=50 cart-service
+```
+
+Repeat with any service name from `docker compose config --services`.
+
+The shared backend Dockerfile pins npm and verifies `express` during build so broken dependency images fail early.
+
+## Local Development Without Docker
+
+Install and run the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Run a Node service:
+
+```powershell
+cd backend/auth-service
+npm install
+npm run dev
+```
+
+Run the AI service:
+
+```powershell
+cd backend/ai-service
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## API Examples
 
 ```http
 POST /api/auth/register
-```
-
----
-
-## Login User
-
-```http
 POST /api/auth/login
-```
-
----
-
-## Nearby Hotels
-
-```http
-GET /api/location/nearby
-```
-
----
-
-## Add To Cart
-
-```http
+POST /api/hotels
+GET  /api/hotels
+POST /api/foods
 POST /api/cart/add
-```
-
----
-
-## Place Order
-
-```http
 POST /api/orders/place
-```
-
----
-
-## AI Chat
-
-```http
+POST /api/payments
+POST /api/reviews
 POST /api/ai/chat
 ```
 
----
-
-# AI Chat Example
+AI chat request:
 
 ```json
 {
@@ -397,150 +210,44 @@ POST /api/ai/chat
 }
 ```
 
----
+## Troubleshooting
 
-# Future Improvements
+If only the frontend is running, check all containers:
 
-* Docker Support
-* Kubernetes Deployment
-* Kafka Integration
-* Redis Caching
-* CI/CD Pipeline
-* Swagger Documentation
-* Recommendation Engine Enhancement
-* Mobile App
-* Live Delivery Tracking
-
----
-
-# Screenshots
-
-## Home Page
-
-*Add screenshot here*
-
-## Hotel Dashboard
-
-*Add screenshot here*
-
-## AI Chatbot
-
-*Add screenshot here*
-
-## Cart & Orders
-
-*Add screenshot here*
-
----
-
-# Deployment
-
-## Frontend
-
-* Vercel
-* Netlify
-
-## Backend
-
-* Railway
-* Render
-* AWS EC2
-
-## Database
-
-* MongoDB Atlas
-
----
-
-# Security Features
-
-* JWT Authentication
-* Password Hashing
-* Protected APIs
-* Rate Limiting
-* Role-Based Access Control
-* Secure Payment Verification
-
----
-
-# Performance Features
-
-* Microservices Architecture
-* Vector Database
-* AI Retrieval Optimization
-* API Gateway Routing
-* Real-time Notifications
-
----
-
-# Author
-
-## Gaurav Kumar Borad
-
-Computer Engineering Student
-
-Interested in:
-
-* AI/ML
-* Backend Engineering
-* Microservices
-* Full Stack Development
-
----
-
-# License
-
-This project is licensed under the MIT License.
-
----
-
-# GitHub Push Commands
-
-```bash
-git init
+```powershell
+docker compose ps -a
 ```
 
-```bash
-git add .
+If a service exits with `Cannot find module 'express'`, rebuild that service without cache:
+
+```powershell
+docker compose build --no-cache <service-name>
+docker compose up -d <service-name>
 ```
 
-```bash
-git commit -m "Initial commit"
+If backend services exit with MongoDB errors, check `MONGO_URI` and Atlas IP access.
+
+If the AI service fails with a ChromaDB collection error, rebuild the AI image. The AI `.dockerignore` excludes the local `vector_db` so Docker starts from a clean Chroma database:
+
+```powershell
+docker compose build --no-cache ai-service
+docker compose up -d ai-service
 ```
 
-```bash
-git branch -M main
-```
+## Security Notes
 
-```bash
-git remote add origin https://github.com/your-username/goeat.git
-```
+Never commit real secrets. Keep `.env` private and use `.env.example` for placeholders.
 
-```bash
-git push -u origin main
-```
+Do not push:
 
----
-
-# Important Note
-
-Before pushing to GitHub:
-
-## Add `.env` files to `.gitignore`
-
-Example:
-
-```txt
-.env
-node_modules
-venv
-__pycache__
-```
-
-Never push:
-
-* API keys
-* JWT secrets
 * MongoDB credentials
+* JWT secrets
+* Email credentials
 * Razorpay secrets
 * Groq API keys
+
+## Author
+
+Gaurav Kumar Borad
+
+Computer Engineering Student interested in AI/ML, backend engineering, microservices, and full stack development.
